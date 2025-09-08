@@ -668,6 +668,22 @@ async function main(host = {}, fetchUrlOverride) {
   const { defaultStyleWords, config } = await import(chrome.runtime.getURL('styles.js'));
   let currentBU = localStorage.getItem('highlight_BU') || '';
   let currentOU = localStorage.getItem('highlight_OU') || '';
+    function hasBUandOU() {
+    return !!(currentBU && currentOU);
+  }
+  function updatePersonalUIState() {
+    const enabled = hasBUandOU();
+    addBtn.disabled = !enabled;
+    customChk.disabled = !enabled;
+    if (!enabled) {
+      customChk.checked = false;
+      includeCustom = false;
+      customPanel.style.display = 'none';
+    }
+    updateStyleWords();
+    clearHighlights(container);
+    renderAllHighlights();
+  }
   let styleWordsToUse = [];
   function updateStyleWords() {
     prevActiveWordsSet = activeWordsSet;
@@ -678,8 +694,8 @@ async function main(host = {}, fetchUrlOverride) {
     if (currentBU && currentOU && config[currentBU]?.[currentOU]?.styleWords) {
       styleWordsToUse.push(...config[currentBU][currentOU].styleWords);
     }
-    if (includeCustom && customRules.length) {
-      styleWordsToUse.push(...customRules.map(r => ({style:r.style, words:r.words})));
+    if (includeCustom && customRules.length && hasBUandOU()) {
+      styleWordsToUse.push(...customRules.map(r => ({ style: r.style, words: r.words })));
     }
     activeWordsSet = new Set();
     styleWordsToUse.forEach(r => {
@@ -708,6 +724,8 @@ async function main(host = {}, fetchUrlOverride) {
   [buSelect, ouSelect].forEach(s => s.className = 'modern-select');
   toggle.textContent = 'Open Original';
   const addBtn      = document.createElement('button');
+  addBtn.disabled = !hasBUandOU();
+  customChk.disabled = !hasBUandOU();
   addBtn.textContent = 'Edit Personal Styles';
   const customChk   = document.createElement('input');
   customChk.type    = 'checkbox';
@@ -1027,8 +1045,22 @@ async function main(host = {}, fetchUrlOverride) {
     }
   }
   addBtn.title = 'Add / Manage custom highlights';
-  addBtn.onclick = (e) => { e.preventDefault(); toggleCustomPanel(); };
-  addBtn.oncontextmenu = (e) => { e.preventDefault(); toggleCustomPanel(); };
+  addBtn.onclick = (e) => {
+    e.preventDefault();
+    if (!hasBUandOU()) {
+      alert('Please select both a BU and an OU to edit personal styles.');
+      return;
+    }
+    toggleCustomPanel();
+  };
+  addBtn.oncontextmenu = (e) => {
+    e.preventDefault();
+    if (!hasBUandOU()) {
+      alert('Please select both a BU and an OU to edit personal styles.');
+      return;
+    }
+    toggleCustomPanel();
+  };
   buSelect.innerHTML =
     `<option value="">-- Select BU --</option>` +
     Object.keys(config)
@@ -1240,6 +1272,7 @@ async function main(host = {}, fetchUrlOverride) {
   function refreshAll() {
     updateStyleWords();
     clearHighlights(container);
+    updatePersonalUIState();
     renderAllHighlights();
     renderCustomPanel();
   }
@@ -1249,6 +1282,7 @@ async function main(host = {}, fetchUrlOverride) {
     currentOU = '';
     localStorage.removeItem('highlight_OU');
     updateOuOptions();
+    updatePersonalUIState();
     updateStyleWords();
     clearHighlights(container); 
     renderAllHighlights();
@@ -1256,6 +1290,7 @@ async function main(host = {}, fetchUrlOverride) {
   ouSelect.onchange = () => {
     currentOU = ouSelect.value;
     localStorage.setItem('highlight_OU', currentOU);
+    updatePersonalUIState();
     updateStyleWords();
     clearHighlights(container); 
     renderAllHighlights();
@@ -1271,12 +1306,17 @@ async function main(host = {}, fetchUrlOverride) {
     ouSelect.value = currentOU;
   }
   customChk.addEventListener('change', () => {
+    if (!hasBUandOU()) {
+      customChk.checked = false;
+      includeCustom = false;
+      alert('Please select both a BU and an OU to use personal styles.');
+      return;
+    }
     includeCustom = customChk.checked;
     updateStyleWords();
     clearHighlights(container);
     renderAllHighlights();
   });
-
   updateStyleWords();
   const pdfjsLib    = await import(chrome.runtime.getURL('pdf.mjs'));
   const pdfjsViewer = await import(chrome.runtime.getURL('pdf_viewer.mjs'));
@@ -1369,8 +1409,22 @@ async function main(host = {}, fetchUrlOverride) {
   container.appendChild(viewerDiv);
   rebuildRuleStyles();
   addBtn.title = 'Add / Manage custom highlights'; 
-  addBtn.onclick = (e) => { e.preventDefault(); toggleCustomPanel(); };
-  addBtn.oncontextmenu = (e) => { e.preventDefault(); toggleCustomPanel(); };
+  addBtn.onclick = (e) => {
+    e.preventDefault();
+    if (!hasBUandOU()) {
+      alert('Please select both a BU and an OU to edit personal styles.');
+      return;
+    }
+    toggleCustomPanel();
+  };
+  addBtn.oncontextmenu = (e) => {
+    e.preventDefault();
+    if (!hasBUandOU()) {
+      alert('Please select both a BU and an OU to edit personal styles.');
+      return;
+    }
+    toggleCustomPanel();
+  };
   document.body.appendChild(toggle);
   document.body.appendChild(hlPanel);
   if (showingStyled) {
