@@ -724,13 +724,13 @@ async function main(host = {}, fetchUrlOverride) {
   [buSelect, ouSelect].forEach(s => s.className = 'modern-select');
   toggle.textContent = 'Open Original';
   const addBtn      = document.createElement('button');
-  addBtn.disabled = !hasBUandOU();
-  customChk.disabled = !hasBUandOU();
   addBtn.textContent = 'Edit Personal Styles';
   const customChk   = document.createElement('input');
   customChk.type    = 'checkbox';
   customChk.checked = includeCustom;
   customChk.id      = 'highlightUseCustom';
+  addBtn.disabled = !hasBUandOU();
+  customChk.disabled = !hasBUandOU();
   const customLbl   = document.createElement('label');
   customLbl.htmlFor = customChk.id;
   customLbl.textContent = 'Use Custom';
