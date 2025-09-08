@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "Attachment Formatting Tool",
+  "description": "Formatting Tool for that highlights, bolds and colors words based on the configuration selected for PDF files.",
+  "version": "0.1.9",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://cpic1cs.corp.medtronic.com:8008/*",
+        "https://crmstage.medtronic.com/*"
+      ],
+      "js": ["content.js"],
+      "type": "module",
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "host_permissions": [
+    "https://cpic1cs.corp.medtronic.com:8008/*",
+    "https://crmstage.medtronic.com/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "viewer.html",
+        "viewer.js",
+        "pdf.mjs",
+        "images/loading-icon.gif",
+        "pdf.worker.mjs",
+        "pdf_viewer.mjs",
+        "pdf_viewer.css",
+        "styles.js"
+      ],
+      "matches": [
+        "https://cpic1cs.corp.medtronic.com:8008/*",
+        "https://crmstage.medtronic.com/*"
+      ]
+    }
+  ]
+}
