@@ -125,7 +125,7 @@ function makeRegex(word) {
   } else {
     pattern = esc(w) + '(?:s|ed)?';
   }
-  return new RegExp(`(?<![\\p{L}\\p{N}])(${pattern})(?![\\p{L}\\p{N}])`, 'giu');
+  return new RegExp(`(?<![\\p{L}\\p{N}])(${pattern})`, 'giu');
 }
 const FORCE_TEXT_VISIBLE = ';color:#000 !important;-webkit-text-fill-color:#000 !important;';
 const CSS_COLOR_KEYWORDS = [
