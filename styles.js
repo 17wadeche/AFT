@@ -335,7 +335,6 @@ const config = {
           'EMI',
           '???',
           'Perforation',
-          'Perfor',
           'Dislodge',
           'TWOS',
           'FFRW',
