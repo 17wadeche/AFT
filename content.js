@@ -321,20 +321,19 @@ async function main(host = {}, fetchUrlOverride) {
   }
   function flashFirstSpanMatchOnPage(pageEl, phrase) {
     if (!phrase) return false;
-    const tl = pageEl.querySelector('.textLayer');
-    if (!tl) return false;
-    const tlRect = tl.getBoundingClientRect();
+    const pageRect = pageEl.getBoundingClientRect();
+    const scale = getPageScale(pageEl);
     const isNonWord = s => /^[^\p{L}\p{N}]+$/u.test(s || "");
     const tokenAlts = t => (t === "and" ? ["and", "&"] : [t]);
     const toLC = s => (s || "").toLowerCase();
-    const spans = tl.querySelectorAll("span");
+    const spans = pageEl.querySelectorAll(".textLayer span");
     for (const s of spans) {
       const rng = getRangeForPhraseInSpan(s, phrase);
       if (!rng) continue;
       const rects = Array.from(rng.getClientRects()).filter(r => r.width && r.height);
       try { rng.detach?.(); } catch {}
       if (rects.length) {
-        const yLocal = rects[0].top - tlRect.top;
+        const yLocal = (rects[0].top - pageRect.top - 8) / scale;
         const target = pageEl.offsetTop + Math.max(0, yLocal - 60);
         container.scrollTo({ top: target, behavior: "smooth" });
         flashRectsOnPage(pageEl, rects);
@@ -345,8 +344,10 @@ async function main(host = {}, fetchUrlOverride) {
     if (!tokens.length) return false;
     const allSpans = Array.from(spans);
     for (let i = 0; i < allSpans.length; i++) {
-      let j = i, pos = 0, k = 0;
-      const ranges = [];
+      let j = i;          
+      let pos = 0;           
+      let k = 0;          
+      const ranges = [];         
       while (k < tokens.length && j < allSpans.length) {
         const span = allSpans[j];
         const lc = toLC(span.textContent || "");
@@ -365,7 +366,7 @@ async function main(host = {}, fetchUrlOverride) {
             rng.setStart(tn, start);
             rng.setEnd(tn, end);
             ranges.push(rng);
-            pos = hit + alt.length;
+            pos = hit + alt.length;  
             k++;
             foundHere = true;
             break;
@@ -373,7 +374,10 @@ async function main(host = {}, fetchUrlOverride) {
         }
         if (foundHere) continue;
         const tail = lc.slice(pos).trim();
-        if (!tail || isNonWord(tail) || /^-+$/.test(tail)) { j++; pos = 0; continue; }
+        if (!tail || isNonWord(tail) || /^-+$/.test(tail)) {
+          j++; pos = 0;      
+          continue;
+        }
         ranges.forEach(r => { try { r.detach?.(); } catch {} });
         break;
       }
@@ -384,7 +388,7 @@ async function main(host = {}, fetchUrlOverride) {
           try { r.detach?.(); } catch {}
         }
         if (rects.length) {
-          const yLocal = rects[0].top - tlRect.top;
+          const yLocal = (rects[0].top - pageRect.top - 8) / scale;
           const target = pageEl.offsetTop + Math.max(0, yLocal - 60);
           container.scrollTo({ top: target, behavior: "smooth" });
           flashRectsOnPage(pageEl, rects);
@@ -392,7 +396,7 @@ async function main(host = {}, fetchUrlOverride) {
         }
       }
     }
-    return false;
+    return false; 
   }
   const normalize = s => (s || "").toLowerCase().replace(/\s+/g, " ").trim();
   const pageTextCache = new Map();
@@ -534,20 +538,6 @@ async function main(host = {}, fetchUrlOverride) {
     'CareAlert Event List'
   ];
   styleTag.textContent = `
-    .page {
-      position: relative !important; /* Establishes the positioning context */
-    }
-    .page .canvasWrapper,
-    .page .textLayer {
-      position: absolute !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      border: none !important;
-    }
     .aft-ql-flash { pointer-events: none; }
     .modern-select {
       color: #000;
