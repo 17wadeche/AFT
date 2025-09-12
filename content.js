@@ -192,21 +192,19 @@ function getPageScale(pageEl) {
   return scale;
 }
 function flashRectsOnPage(pageEl, rects) {
-  const textLayer = pageEl.querySelector('.textLayer');
-  if (!textLayer) return;
-  const tlRect = textLayer.getBoundingClientRect();
+  const pageRect = pageEl.getBoundingClientRect();
   const scale = getPageScale(pageEl);
   const overlays = [];
   rects.forEach(r => {
     const box = document.createElement('div');
     box.className = 'aft-ql-flash';
-    const x = (r.left - tlRect.left) / scale;
-    const y = (r.top - tlRect.top) / scale;
+    const x = (r.left - pageRect.left) / scale;
+    const y = (r.top  - pageRect.top) / scale;
     box.style.left   = `${x}px`;
     box.style.top    = `${y}px`;
     box.style.width  = `${r.width / scale}px`;
     box.style.height = `${r.height / scale}px`;
-    textLayer.appendChild(box);
+    pageEl.appendChild(box);
     overlays.push(box);
   });
   setTimeout(() => overlays.forEach(o => o.remove()), 1600);
