@@ -668,6 +668,25 @@ async function main(host = {}, fetchUrlOverride) {
   #aftQuickLinks.collapsed #aftQuickLinksHeader .aft-caret {
     transform: rotate(-90deg);
   }
+    #aftCustomPanel .aft-btn-black {
+    color:#000 !important;
+    -webkit-text-fill-color:#000 !important;
+    text-shadow:none !important;
+  }
+  #aftCustomPanel .aft-btn-black:hover,
+  #aftCustomPanel .aft-btn-black:active,
+  #aftCustomPanel .aft-btn-black:focus {
+    color:#000 !important;
+    -webkit-text-fill-color:#000 !important;
+  }
+  @media (forced-colors: active) {
+    #aftCustomPanel .aft-btn-black {
+      forced-color-adjust: none;
+      color:#000 !important;
+      background:#f3f3f3 !important;  /* keeps it readable on HC modes */
+      border-color:#888 !important;
+    }
+  }
   `;
   let showingStyled = true;
   document.head.appendChild(styleTag);
@@ -894,8 +913,8 @@ async function main(host = {}, fetchUrlOverride) {
         row.appendChild(colorWrap);
         const actionRow = document.createElement('div');
         actionRow.style.cssText='grid-column:1/-1;display:flex;justify-content:flex-end;gap:4px;margin-bottom:2px;';
-        const saveBtn=document.createElement('button'); saveBtn.textContent='Save'; saveBtn.style.fontSize='11px';
-        const delBtn=document.createElement('button'); delBtn.textContent='Delete'; delBtn.style.fontSize='11px';
+        const saveBtn=document.createElement('button'); saveBtn.textContent='Save'; saveBtn.style.fontSize='11px'; saveBtn.classList.add('aft-btn-black');
+        const delBtn=document.createElement('button'); delBtn.textContent='Delete'; delBtn.style.fontSize='11px'; delBtn.classList.add('aft-btn-black');
         actionRow.append(saveBtn,delBtn);
         row.appendChild(actionRow);
         saveBtn.onclick = () => {
@@ -957,8 +976,8 @@ async function main(host = {}, fetchUrlOverride) {
     customPanelBody.appendChild(newRow);
     const newRowBtns=document.createElement('div');
     newRowBtns.style.cssText='margin-top:4px;display:flex;justify-content:flex-end;gap:4px;';
-    const newAddBtn=document.createElement('button'); newAddBtn.textContent='Add'; newAddBtn.style.fontSize='11px';
-    const newCancelBtn=document.createElement('button'); newCancelBtn.textContent='Clear'; newCancelBtn.style.fontSize='11px';
+    const newAddBtn=document.createElement('button'); newAddBtn.textContent='Add'; newAddBtn.style.fontSize='11px'; newAddBtn.classList.add('aft-btn-black');
+    const newCancelBtn=document.createElement('button'); newCancelBtn.textContent='Clear'; newCancelBtn.style.fontSize='11px'; newCancelBtn.classList.add('aft-btn-black');
     newRowBtns.append(newCancelBtn,newAddBtn);
     customPanelBody.appendChild(newRowBtns);
     const footer = document.createElement('div');
