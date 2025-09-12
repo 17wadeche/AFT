@@ -96,6 +96,10 @@ const defaultStyleWords = [
       'Imaging Summary of Failure(s)',
       'Imaging Modalities',
       'Lot #',
+      'Lot',
+      'model',
+      'Serial',
+      'return',
       'Were hardware parts replaced?',
       'Returned Unused',
       'Mechanical Inspection',
@@ -127,6 +131,10 @@ const defaultStyleWords = [
   {
     style: 'color:red',
     words: [
+      'title',
+      'additional comments',
+      'intervention',
+      'narrative',
       'Was Medtronic Imaging Aborted',
       'This is a test of the interface details font color',
       'This is a test of the interface details font color',

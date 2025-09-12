@@ -502,6 +502,27 @@ async function main(host = {}, fetchUrlOverride) {
   window.__AFT_VERSION = '0.1.3d';
   console.log('[AFT] init v' + window.__AFT_VERSION, location.href);
   const AFT_UI_Z = 21474837000;
+  let noStylesBannerEl = null;
+  function updateNoStylesBanner() {
+    const anyStyling =
+      container?.querySelector('.word-highlight, .word-underline, .styled-word');
+    if (!anyStyling) {
+      if (!noStylesBannerEl) {
+        noStylesBannerEl = document.createElement('div');
+        noStylesBannerEl.id = 'aftNoStylesBanner';
+        noStylesBannerEl.textContent = 'No stylings found. This PDF may not be compatible.';
+        noStylesBannerEl.style.cssText = `
+          position:fixed; top:0; left:0; right:0; padding:8px 12px;
+          background:#f00; color:#000; text-align:center;
+          font:bold 14px system-ui, sans-serif; z-index:${AFT_UI_Z + 1};
+        `;
+        document.body.appendChild(noStylesBannerEl);
+      }
+    } else {
+      noStylesBannerEl?.remove();
+      noStylesBannerEl = null;
+    }
+  }
   const styleTag = document.createElement('style');
   const QUICK_LINKS = [
     'Device Summary',
@@ -1269,6 +1290,7 @@ async function main(host = {}, fetchUrlOverride) {
       });
     });
     if (pulseMode) setTimeout(() => { pulseMode = false; }, 1000);
+    updateNoStylesBanner();
   }
   function refreshAll() {
     updateStyleWords();
@@ -1720,6 +1742,7 @@ async function main(host = {}, fetchUrlOverride) {
       _aftRefreshScheduled = false;
       if (!showingStyled) return;
       renderAllHighlights();
+      updateNoStylesBanner();
     });
   }
   setTimeout(() => aftRefreshHighlights('initDelay'), 500);
@@ -1776,6 +1799,8 @@ async function main(host = {}, fetchUrlOverride) {
       location.href = window.__AFT_FETCH_URL + (window.__AFT_FETCH_URL.includes('#') ? '' : '#noaft');
       return;
     }
+    noStylesBannerEl?.remove();
+    noStylesBannerEl = null;
     container?.remove();
     hlPanel?.remove();
     customPanel?.remove();
