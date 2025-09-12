@@ -90,6 +90,12 @@ function startWhenReady() {
     main(host);
     return;
   }
+  const ct = (document.contentType || '').toLowerCase();
+  if ((ct.includes('text/html') || ct === '' /* some sites omit it */) && document.body) {
+    initialized = true;
+    mainHTML();
+    return;
+  }
   if (document.readyState === 'complete' || document.readyState === 'interactive') {
     if (document.contentType === 'application/pdf') {
       initialized = true;
@@ -190,6 +196,184 @@ function getPageScale(pageEl) {
   const m = pageEl?.style?.transform?.match(/scale\(([^)]+)\)/);
   if (m) scale = parseFloat(m[1]) || 1;
   return scale;
+}
+const HTML_EXCLUDE = new Set(['SCRIPT','STYLE','NOSCRIPT','CODE','PRE','TEXTAREA']);
+const AFT_HTML_ATTR = 'data-aft-styled';
+function isExcluded(el) {
+  for (let n = el; n; n = n.parentElement) {
+    if (HTML_EXCLUDE.has(n.tagName)) return true;
+    if (n.isContentEditable) return true;
+    if (n.closest && n.closest('.styled-word,.word-highlight,.word-underline')) return true;
+  }
+  return false;
+}
+function walkTextNodes(root, cb) {
+  const walker = document.createTreeWalker(
+    root,
+    NodeFilter.SHOW_TEXT,
+    {
+      acceptNode: node => {
+        if (!node.data || !node.data.trim()) return NodeFilter.FILTER_REJECT;
+        const p = node.parentElement;
+        if (!p || isExcluded(p)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    }
+  );
+  let n;
+  while ((n = walker.nextNode())) cb(n);
+}
+function wrapRangeInTextNode(node, start, end, cssText, isUnderline, isPulse) {
+  if (start >= end || end > node.data.length) return null;
+  const before = start ? node.splitText(start) : node;
+  const after  = before.splitText(end - start);
+  const span = document.createElement('span');
+  span.className = 'styled-word';
+  if (isUnderline) span.classList.add('aft-ul');
+  if (isPulse) span.classList.add('pulse');
+  const needsForce = !/color\s*:/.test(cssText) && !isUnderline;
+  span.style.cssText = cssText + (needsForce ? FORCE_TEXT_VISIBLE : '');
+  span.setAttribute(AFT_HTML_ATTR, '1');
+  span.appendChild(before.cloneNode(true));
+  before.parentNode.replaceChild(span, before);
+  return span;
+}
+function highlightHTMLNode(node, rules) {
+  const text = node.data;
+  const jobs = [];
+  for (const rule of rules) {
+    for (const rxObj of (rule._regexes || [])) {
+      const re = rxObj.rx;
+      if (!(re instanceof RegExp)) continue;
+      re.lastIndex = 0;
+      let m;
+      while ((m = re.exec(text))) {
+        jobs.push({
+          start: m.index,
+          end: m.index + m[0].length,
+          style: rule.style,
+          isUnderline: /text-decoration-line\s*:\s*underline/i.test(rule.style),
+          isNew: rxObj.isNew === true
+        });
+      }
+    }
+  }
+  if (!jobs.length) return;
+  const seen = new Set();
+  const unique = [];
+  for (const j of jobs) {
+    const k = `${j.start}|${j.end}|${j.style}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    unique.push(j);
+  }
+  unique.sort((a,b) => b.start - a.start);
+  for (const j of unique) {
+    wrapRangeInTextNode(node, j.start, j.end, j.style, j.isUnderline, pulseMode && j.isNew);
+  }
+}
+function clearHTMLHighlights(scope = document) {
+  scope.querySelectorAll(`span.styled-word[${AFT_HTML_ATTR}="1"]`).forEach(w => {
+    const p = w.parentNode;
+    while (w.firstChild) p.insertBefore(w.firstChild, w);
+    w.remove();
+  });
+  scope.querySelectorAll('.word-highlight, .word-underline').forEach(el => el.remove());
+}
+let htmlObserver = null;
+function applyHighlightsToHTML(root = document.body) {
+  if (!root) return;
+  const skipWithinOurUI = el => el.closest && el.closest('#aftHlPanel,#aftCustomPanel') ? true : false;
+  walkTextNodes(root, (tn) => {
+    if (skipWithinOurUI(tn.parentElement)) return;
+    if (tn.parentElement.closest('.styled-word')) return; // already styled
+    highlightHTMLNode(tn, styleWordsToUse);
+  });
+}
+function attachHtmlObserver() {
+  if (htmlObserver) return;
+  htmlObserver = new MutationObserver((mutations) => {
+    const touched = new Set();
+    for (const m of mutations) {
+      if (m.type === 'childList') {
+        m.addedNodes.forEach(n => {
+          if (n.nodeType === 1) touched.add(n);   // element
+          if (n.nodeType === 3) touched.add(n.parentElement || document.body); // text
+        });
+      } else if (m.type === 'characterData') {
+        touched.add(m.target.parentElement || document.body);
+      }
+    }
+    touched.forEach(el => {
+      if (!el || !el.isConnected) return;
+      if (isExcluded(el)) return;
+      clearHTMLHighlights(el);
+      applyHighlightsToHTML(el);
+    });
+  });
+  htmlObserver.observe(document.body, {
+    subtree: true,
+    childList: true,
+    characterData: true
+  });
+}
+function detachHtmlObserver() {
+  if (htmlObserver) {
+    htmlObserver.disconnect();
+    htmlObserver = null;
+  }
+}
+function ensureHtmlCSS() {
+  if (document.getElementById('aft-html-css')) return;
+  const css = document.createElement('style');
+  css.id = 'aft-html-css';
+  css.textContent = `
+    .styled-word { display:inline; font:inherit; letter-spacing: inherit !important; }
+    @keyframes pulseHighlight {
+      0% { filter: brightness(2.5) saturate(2); transform: scale(1); }
+      50% { filter: brightness(3) saturate(3); transform: scale(1.04); }
+      100% { filter: brightness(1) saturate(1); transform: scale(1); }
+    }
+    .styled-word.pulse { animation: pulseHighlight 0.9s ease-out 0s 2 alternate; }
+  `;
+  document.head.appendChild(css);
+}
+function installHtmlMiniControls() {
+  if (document.getElementById('aftHtmlMini')) return;
+  const btn = document.createElement('button');
+  btn.id = 'aftHtmlMini';
+  btn.textContent = 'AFT: Clear';
+  Object.assign(btn.style, {
+    position:'fixed', top:'37px', right:'16px',
+    zIndex: 2147483647, padding:'6px 12px',
+    background:'#ff0', color:'#000', fontWeight:'bold',
+    cursor:'pointer', border:'1px solid #888', borderRadius:'4px'
+  });
+  let applied = true;
+  btn.onclick = () => {
+    if (applied) {
+      detachHtmlObserver();
+      clearHTMLHighlights(document);
+      btn.textContent = 'AFT: Apply';
+    } else {
+      applyHighlightsToHTML(document.body);
+      attachHtmlObserver();
+      btn.textContent = 'AFT: Clear';
+    }
+    applied = !applied;
+  };
+  document.body.appendChild(btn);
+}
+function mainHTML() {
+  try {
+    ensureHtmlCSS();
+    updateStyleWords();
+    applyHighlightsToHTML(document.body);
+    attachHtmlObserver();
+    installHtmlMiniControls();
+  } catch (e) {
+    console.warn('[AFT] HTML mode error:', e);
+  }
 }
 function flashRectsOnPage(pageEl, rects) {
   const pageRect = pageEl.getBoundingClientRect();
