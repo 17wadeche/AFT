@@ -192,20 +192,21 @@ function getPageScale(pageEl) {
   return scale;
 }
 function flashRectsOnPage(pageEl, rects) {
-  const tl = pageEl.querySelector('.textLayer');
-  if (!tl) return;
-  const tlRect = tl.getBoundingClientRect();
+  const textLayer = pageEl.querySelector('.textLayer');
+  if (!textLayer) return;
+  const tlRect = textLayer.getBoundingClientRect();
+  const scale = getPageScale(pageEl);
   const overlays = [];
   rects.forEach(r => {
     const box = document.createElement('div');
     box.className = 'aft-ql-flash';
-    box.style.left   = `${r.left  - tlRect.left}px`;
-    box.style.top    = `${r.top   - tlRect.top }px`;
-    box.style.width  = `${r.width }px`;
-    box.style.height = `${r.height}px`;
-    box.style.position = 'absolute';
-    box.style.pointerEvents = 'none';
-    tl.appendChild(box);
+    const x = (r.left - tlRect.left) / scale;
+    const y = (r.top - tlRect.top) / scale;
+    box.style.left   = `${x}px`;
+    box.style.top    = `${y}px`;
+    box.style.width  = `${r.width / scale}px`;
+    box.style.height = `${r.height / scale}px`;
+    textLayer.appendChild(box);
     overlays.push(box);
   });
   setTimeout(() => overlays.forEach(o => o.remove()), 1600);
@@ -1645,15 +1646,9 @@ async function main(host = {}, fetchUrlOverride) {
   eventBus.on('documentloadfailed', () => loader.remove());
   const fix = document.createElement('style');
   fix.textContent = `
-    .textLayer span {
-      pointer-events:auto !important;
-      opacity:1 !important;
-      mix-blend-mode:multiply;
-    }
+    .textLayer span { pointer-events:auto; }
     .styled-word { 
-      display: contents !important;
-      font:inherit;
-      letter-spacing: inherit !important;
+      display: inline;
     }
     .word-highlight {
       position: absolute;
