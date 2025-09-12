@@ -319,8 +319,6 @@ async function main(host = {}, fetchUrlOverride) {
     const target = pageEl.offsetTop + Math.max(0, yLocal - 60);
     container.scrollTo({ top: target, behavior: 'smooth' });
   }
-  const pageRect = pageEl.getBoundingClientRect();
-  const yLocal = rects[0].top - pageRect.top;
   function flashFirstSpanMatchOnPage(pageEl, phrase) {
     if (!phrase) return false;
     const pageRect = pageEl.getBoundingClientRect();
@@ -1144,7 +1142,6 @@ async function main(host = {}, fetchUrlOverride) {
         : NodeFilter.FILTER_REJECT
       }
     );
-
     const jobsByKey = Object.create(null);
     for (let textNode; (textNode = walker.nextNode()); ) {
       const text = textNode.data;
@@ -1173,34 +1170,26 @@ async function main(host = {}, fetchUrlOverride) {
         }
       }
     }
-
     const jobs = Object.values(jobsByKey).flat();
-
     for (const job of jobs) {
       const { style } = job;
       const hasBg   = /background\s*:/.test(style);
       const hasUL   = /text-decoration-line\s*:\s*underline/i.test(style);
       if (!hasBg && !hasUL) continue;
-
       const { node, start, end, shift } = job;
       if (end > node.length) continue;
-
       const range = document.createRange();
       range.setStart(node, start);
       range.setEnd(node, end);
-
-      // ⭐ NEW: position in the text layer’s coordinate space
       const tl = page.querySelector('.textLayer');
       if (!tl) { range.detach(); continue; }
       const tlRect = tl.getBoundingClientRect();
-
       for (const r of range.getClientRects()) {
         if (hasBg) {
           const box = document.createElement('div');
           box.className = 'word-highlight';
           if (shift) box.classList.add('shift-left');
           if (pulseMode && job.isNew) box.classList.add('pulse');
-
           box.style.cssText = `${style};
             position:absolute;
             left:${r.left - tlRect.left}px;
@@ -1210,20 +1199,15 @@ async function main(host = {}, fetchUrlOverride) {
             pointer-events:none;
             mix-blend-mode:multiply;
             z-index:5;`;
-
-          // ⭐ Append to textLayer (not .page)
           tl.appendChild(box);
         }
-
         if (hasUL) {
           const ul = document.createElement('div');
           ul.className = 'word-underline';
           if (shift) ul.classList.add('shift-left');
           if (pulseMode && job.isNew) ul.classList.add('pulse');
-
           const ulColor = getUnderlineColorFromStyle(style);
           const underlineH = Math.max(2, Math.round(r.height * 0.18)); // auto thickness
-
           ul.style.position = 'absolute';
           ul.style.left  = `${r.left - tlRect.left}px`;
           ul.style.top   = `${r.bottom - tlRect.top - underlineH}px`;
@@ -1236,15 +1220,11 @@ async function main(host = {}, fetchUrlOverride) {
           ul.style.pointerEvents = 'none';
           ul.style.zIndex = '6';
           ul.style.mixBlendMode = 'multiply';
-
-          // ⭐ Append to textLayer (not .page)
           tl.appendChild(ul);
         }
       }
       range.detach();
     }
-
-    // (unchanged) wrap-only jobs for text color/underline styles
     const spanJobs = jobs
       .filter(j => {
         const st = j.style;
@@ -1255,7 +1235,6 @@ async function main(host = {}, fetchUrlOverride) {
         return a.node.compareDocumentPosition(b.node) &
               Node.DOCUMENT_POSITION_FOLLOWING ? 1 : -1;
       });
-
     const seen = new Set();
     const uniqueSpanJobs = [];
     for (const j of spanJobs) {
@@ -1264,7 +1243,6 @@ async function main(host = {}, fetchUrlOverride) {
       seen.add(k);
       uniqueSpanJobs.push(j);
     }
-
     for (const job of uniqueSpanJobs) {
       const { node, start, end, style, shift } = job;
       if (end > node.length) continue;
@@ -1284,7 +1262,6 @@ async function main(host = {}, fetchUrlOverride) {
       target.parentNode.replaceChild(wrap, target);
     }
   }
-
   function isTextStyle(rule) {
     if (rule.prop) return rule.prop === 'color'; 
     const css = rule.style || '';
