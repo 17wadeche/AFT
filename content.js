@@ -250,8 +250,8 @@ async function main(host = {}, fetchUrlOverride) {
     rects.forEach(r => {
       const box = document.createElement('div');
       box.className = 'aft-ql-flash';
-      const x = (r.left - pageRect.left - 8) / scale;
-      const y = (r.top  - pageRect.top  - 8) / scale;
+      const x = (r.left - pageRect.left) / scale;
+      const y = (r.top  - pageRect.top) / scale;
       box.style.left   = `${x}px`;
       box.style.top    = `${y}px`;
       box.style.width  = `${r.width / scale}px`;
@@ -333,7 +333,7 @@ async function main(host = {}, fetchUrlOverride) {
       const rects = Array.from(rng.getClientRects()).filter(r => r.width && r.height);
       try { rng.detach?.(); } catch {}
       if (rects.length) {
-        const yLocal = (rects[0].top - pageRect.top - 8) / scale;
+        const yLocal = (rects[0].top - pageRect.top) / scale;
         const target = pageEl.offsetTop + Math.max(0, yLocal - 60);
         container.scrollTo({ top: target, behavior: "smooth" });
         flashRectsOnPage(pageEl, rects);
@@ -388,7 +388,7 @@ async function main(host = {}, fetchUrlOverride) {
           try { r.detach?.(); } catch {}
         }
         if (rects.length) {
-          const yLocal = (rects[0].top - pageRect.top - 8) / scale;
+          const yLocal = (rects[0].top - pageRect.top) / scale;
           const target = pageEl.offsetTop + Math.max(0, yLocal - 60);
           container.scrollTo({ top: target, behavior: "smooth" });
           flashRectsOnPage(pageEl, rects);
