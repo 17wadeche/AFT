@@ -1597,6 +1597,42 @@ async function main(host = {}, fetchUrlOverride) {
     if (DEBUG) console.debug('[AFT] PDF fetch failed:', err);
     return;
   }
+  function parseFilenameFromCD(v) {
+    if (!v) return '';
+    let m = /filename\*\s*=\s*([^;]+)/i.exec(v);
+    if (m) {
+      let s = m[1].trim().replace(/^"(.*)"$/, '$1');
+      const parts = s.split("''");
+      if (parts.length === 2) {
+        try { return decodeURIComponent(parts[1]); } catch {}
+      }
+      try { return decodeURIComponent(s); } catch { return s; }
+    }
+    m = /filename\s*=\s*([^;]+)/i.exec(v);
+    if (m) {
+      let s = m[1].trim().replace(/^"(.*)"$/, '$1');
+      try { return decodeURIComponent(s); } catch { return s; }
+    }
+    return '';
+  }
+  function getNameFromUrl(u = '') {
+    try {
+      const url = new URL(u);
+      const qpName =
+       url.searchParams.get('filename') ||
+        url.searchParams.get('fileName') ||
+        url.searchParams.get('name') ||
+        url.searchParams.get('download');
+      let last = (url.pathname.split('/').pop() || '').trim();
+      const raw = (qpName || last);
+      return decodeURIComponent(raw).replace(/[\/\\?%*:|"<>]/g, '').trim();
+    } catch { return ''; }
+  }
+  const cd = resp.headers.get('Content-Disposition');
+  const headerName = parseFilenameFromCD(cd);
+  const fallbackName = getNameFromUrl(fetchUrl);
+  const finalTitle = headerName || fallbackName;
+  if (finalTitle) document.title = finalTitle;
   const pdfDoc      = await pdfjsLib.getDocument({data}).promise;
   const eventBus    = new EventBus();
   const linkService = new PDFLinkService({eventBus});
