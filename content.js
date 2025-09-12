@@ -13,7 +13,7 @@ const ALLOWED_PREFIXES = [
     btn.id = '__aft_open_styled';
     btn.textContent = 'Open Styled';
     btn.style.cssText = `
-      position:fixed; top:16px; right:16px;
+      position:fixed; top:25px; right:16px;
       z-index:2147483647; padding:6px 12px;
       background:#ff0; color:#000; font-weight:bold;
       cursor:pointer; border:1px solid #888; border-radius:4px;
@@ -1319,7 +1319,7 @@ async function main(host = {}, fetchUrlOverride) {
     renderAllHighlights();
   };
   Object.assign(toggle.style, {
-    position:'fixed', top:'16px', right:'16px',
+    position:'fixed', top:'25px', right:'16px',
     background:'#ff0', color:'#000', fontWeight:'bold',
     padding:'6px 12px', cursor:'pointer'
   });
