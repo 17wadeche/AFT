@@ -198,8 +198,8 @@ function flashRectsOnPage(pageEl, rects) {
   rects.forEach(r => {
     const box = document.createElement('div');
     box.className = 'aft-ql-flash';
-    const x = (r.left - pageRect.left) / scale;
-    const y = (r.top  - pageRect.top) / scale;
+    const x = (r.left - pageRect.left - 8) / scale;
+    const y = (r.top  - pageRect.top  - 8) / scale;
     box.style.left   = `${x}px`;
     box.style.top    = `${y}px`;
     box.style.width  = `${r.width / scale}px`;
@@ -249,8 +249,8 @@ async function main(host = {}, fetchUrlOverride) {
     rects.forEach(r => {
       const box = document.createElement('div');
       box.className = 'aft-ql-flash';
-      const x = (r.left - pageRect.left) / scale;
-      const y = (r.top  - pageRect.top) / scale;
+      const x = (r.left - pageRect.left - 8) / scale;
+      const y = (r.top  - pageRect.top  - 8) / scale;
       box.style.left   = `${x}px`;
       box.style.top    = `${y}px`;
       box.style.width  = `${r.width / scale}px`;
@@ -332,7 +332,7 @@ async function main(host = {}, fetchUrlOverride) {
       const rects = Array.from(rng.getClientRects()).filter(r => r.width && r.height);
       try { rng.detach?.(); } catch {}
       if (rects.length) {
-        const yLocal = (rects[0].top - pageRect.top) / scale;
+        const yLocal = (rects[0].top - pageRect.top - 8) / scale;
         const target = pageEl.offsetTop + Math.max(0, yLocal - 60);
         container.scrollTo({ top: target, behavior: "smooth" });
         flashRectsOnPage(pageEl, rects);
@@ -387,7 +387,7 @@ async function main(host = {}, fetchUrlOverride) {
           try { r.detach?.(); } catch {}
         }
         if (rects.length) {
-          const yLocal = (rects[0].top - pageRect.top) / scale;
+          const yLocal = (rects[0].top - pageRect.top - 8) / scale;
           const target = pageEl.offsetTop + Math.max(0, yLocal - 60);
           container.scrollTo({ top: target, behavior: "smooth" });
           flashRectsOnPage(pageEl, rects);
@@ -1136,9 +1136,9 @@ async function main(host = {}, fetchUrlOverride) {
     const walker = document.createTreeWalker(
       span,
       NodeFilter.SHOW_TEXT,
-      { acceptNode: n => n.data.trim()
+      { acceptNode: n => n.data.trim() 
         ? NodeFilter.FILTER_ACCEPT
-        : NodeFilter.FILTER_REJECT
+        : NodeFilter.FILTER_REJECT 
       }
     );
     const jobsByKey = Object.create(null);
@@ -1150,7 +1150,7 @@ async function main(host = {}, fetchUrlOverride) {
           if (!(re instanceof RegExp)) continue;
           re.lastIndex = 0;
           let m;
-          while ((m = re.exec(text))) {
+          while ((m = re.exec(text))) {  
             if (!textNode.__highlightId) {
               textNode.__highlightId = Symbol();
             }
@@ -1180,25 +1180,28 @@ async function main(host = {}, fetchUrlOverride) {
       const range = document.createRange();
       range.setStart(node, start);
       range.setEnd(node, end);
-      const tl = page.querySelector('.textLayer');
-      if (!tl) { range.detach(); continue; }
-      const tlRect = tl.getBoundingClientRect();
+      const pageRect = page.getBoundingClientRect();
+      let scale = 1;
+      const m = page.style.transform.match(/scale\(([^)]+)\)/);
+      if (m) scale = parseFloat(m[1]);
       for (const r of range.getClientRects()) {
         if (hasBg) {
           const box = document.createElement('div');
           box.className = 'word-highlight';
           if (shift) box.classList.add('shift-left');
           if (pulseMode && job.isNew) box.classList.add('pulse');
+          const x = (r.left - pageRect.left - 8) / scale;
+          const y = (r.top  - pageRect.top  - 8) / scale;
           box.style.cssText = `${style};
             position:absolute;
-            left:${r.left - tlRect.left}px;
-            top:${r.top  - tlRect.top }px;
-            width:${r.width }px;
-            height:${r.height}px;
+            left:${x}px;
+            top:${y}px;
+            width:${r.width  / scale}px;
+            height:${r.height / scale}px;
             pointer-events:none;
             mix-blend-mode:multiply;
-            z-index:5;`;
-          tl.appendChild(box);
+            z-index:5`;
+          page.appendChild(box);
         }
         if (hasUL) {
           const ul = document.createElement('div');
@@ -1206,20 +1209,16 @@ async function main(host = {}, fetchUrlOverride) {
           if (shift) ul.classList.add('shift-left');
           if (pulseMode && job.isNew) ul.classList.add('pulse');
           const ulColor = getUnderlineColorFromStyle(style);
-          const underlineH = Math.max(2, Math.round(r.height * 0.18)); // auto thickness
-          ul.style.position = 'absolute';
-          ul.style.left  = `${r.left - tlRect.left}px`;
-          ul.style.top   = `${r.bottom - tlRect.top - underlineH}px`;
-          ul.style.width = `${r.width}px`;
-          ul.style.height= `${underlineH}px`;
+          const x = (r.left - pageRect.left - 8) / scale;
+          const y = (r.bottom - pageRect.top - 8 - 3) / scale; 
+          const w = r.width / scale;
+          const h = 4;
+          ul.style.left  = `${x}px`;
+          ul.style.top   = `${y}px`;
+          ul.style.width = `${w}px`;
+          ul.style.height= `${h}px`;
           ul.style.backgroundImage = makeWavyDataURI(ulColor, 2, 6);
-          ul.style.backgroundRepeat = 'repeat-x';
-          ul.style.backgroundPosition = 'left bottom';
-          ul.style.backgroundSize = 'auto 100%';
-          ul.style.pointerEvents = 'none';
-          ul.style.zIndex = '6';
-          ul.style.mixBlendMode = 'multiply';
-          tl.appendChild(ul);
+          page.appendChild(ul);
         }
       }
       range.detach();
@@ -1255,7 +1254,7 @@ async function main(host = {}, fetchUrlOverride) {
       if (pulseMode && job.isNew) wrap.classList.add('pulse');
       const needsForce =
         !/color\s*:/.test(style) &&
-        !isUnderline;
+        !isUnderline; 
       wrap.style.cssText = style + (needsForce ? FORCE_TEXT_VISIBLE : '');
       wrap.appendChild(target.cloneNode(true));
       target.parentNode.replaceChild(wrap, target);
@@ -1644,9 +1643,15 @@ async function main(host = {}, fetchUrlOverride) {
   eventBus.on('documentloadfailed', () => loader.remove());
   const fix = document.createElement('style');
   fix.textContent = `
-    .textLayer span { pointer-events:auto; }
+    .textLayer span {
+      pointer-events:auto !important;
+      opacity:1 !important;
+      mix-blend-mode:multiply;
+    }
     .styled-word { 
-      display: inline;
+      display: contents !important;
+      font:inherit;
+      letter-spacing: inherit !important;
     }
     .word-highlight {
       position: absolute;
