@@ -57,6 +57,26 @@ let newWordsSet        = new Set();
 let pulseMode          = false;
 let customRules = [];
 let includeCustom = true;
+let styleWordsToUse = [];  
+async function computeStyleWordsForHtml() {
+  const { config } = await import(chrome.runtime.getURL('styles.js'));
+  const currentBU = localStorage.getItem('highlight_BU') || '';
+  const currentOU = localStorage.getItem('highlight_OU') || '';
+  const rules = [];
+  if (currentBU && config[currentBU]?.styleWords) {
+    rules.push(...config[currentBU].styleWords);
+  }
+  if (currentBU && currentOU && config[currentBU]?.[currentOU]?.styleWords) {
+    rules.push(...config[currentBU][currentOU].styleWords);
+  }
+  if (includeCustom && customRules.length && currentBU && currentOU) {
+    rules.push(...customRules.map(r => ({ style: r.style, words: r.words })));
+  }
+  styleWordsToUse = rules.map(r => ({
+    ...r,
+    _regexes: r.words.map(w => ({ word: w, rx: makeRegex(w), isNew: false })),
+  }));
+}
 try {
   customRules = JSON.parse(localStorage.getItem('highlight_custom_rules') || '[]');
   if (!Array.isArray(customRules)) customRules = [];
@@ -364,10 +384,10 @@ function installHtmlMiniControls() {
   };
   document.body.appendChild(btn);
 }
-function mainHTML() {
+async function mainHTML() {
   try {
     ensureHtmlCSS();
-    updateStyleWords();
+    await computeStyleWordsForHtml();           // instead of updateStyleWords()
     applyHighlightsToHTML(document.body);
     attachHtmlObserver();
     installHtmlMiniControls();
