@@ -192,23 +192,20 @@ function getPageScale(pageEl) {
   return scale;
 }
 function flashRectsOnPage(pageEl, rects) {
-  const layer = pageEl.querySelector('.textLayer');
-  if (!layer) return;
-  const layerRect = layer.getBoundingClientRect();
+  const tl = pageEl.querySelector('.textLayer');
+  if (!tl) return;
+  const tlRect = tl.getBoundingClientRect();
   const overlays = [];
-  const scale = getPageScale(pageEl); // Keep the scale calculation
   rects.forEach(r => {
     const box = document.createElement('div');
     box.className = 'aft-ql-flash';
-    box.style.cssText = `
-      position:absolute;
-      /* The main calculation is now simpler and more accurate */
-      left:${(r.left - layerRect.left)}px;
-      top:${(r.top  - layerRect.top) + Math.round(HILITE_Y_OFFSET * scale)}px;
-      width:${r.width}px; height:${r.height}px;
-      pointer-events:none; z-index:9; mix-blend-mode:multiply;
-    `;
-    layer.appendChild(box);
+    box.style.left   = `${r.left  - tlRect.left}px`;
+    box.style.top    = `${r.top   - tlRect.top }px`;
+    box.style.width  = `${r.width }px`;
+    box.style.height = `${r.height}px`;
+    box.style.position = 'absolute';
+    box.style.pointerEvents = 'none';
+    tl.appendChild(box);
     overlays.push(box);
   });
   setTimeout(() => overlays.forEach(o => o.remove()), 1600);
