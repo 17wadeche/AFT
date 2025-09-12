@@ -474,6 +474,7 @@ const config = {
     },
     'Structural Heart and Aortic': { // OU
       styleWords: defaultStyleWords,
+      quickLinks: ['']
     }
   },
   'CV-SR': { // BU
