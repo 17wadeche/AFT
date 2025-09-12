@@ -1,3 +1,15 @@
+export const defaultQuickLinks = [
+  'Device Summary',
+  'Reason for Transmission',
+  'Alert and Event Summary',
+  'Observations',
+  'Notable Data Section',
+  'Notes',
+  'Device Status',
+  'Episodes List',
+  'Other Hardware Notes',
+  'CareAlert Event List'
+];
 const defaultStyleWords = [
   {
     style: 'color:orange',
@@ -350,6 +362,18 @@ const config = {
     }
   },
   CRDM: {
+    quickLinks: [
+      'Device Summary',
+      'Reason for Transmission',
+      'Alert and Event Summary',
+      'Observations',
+      'Notable Data Section',
+      'Notes',
+      'Device Status',
+      'Episodes List',
+      'Other Hardware Notes',
+      'CareAlert Event List'
+    ],
     styleWords: [
       {
         style: 'color:blue',
@@ -446,6 +470,7 @@ const config = {
   'CV-SH': { // BU
     'Cardiac Surgery': { // OU
       styleWords: defaultStyleWords,
+      quickLinks: ['Medtronic']
     },
     'Structural Heart and Aortic': { // OU
       styleWords: defaultStyleWords,

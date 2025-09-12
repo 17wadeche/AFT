@@ -524,18 +524,6 @@ async function main(host = {}, fetchUrlOverride) {
     }
   }
   const styleTag = document.createElement('style');
-  const QUICK_LINKS = [
-    'Device Summary',
-    'Reason for Transmission',
-    'Alert and Event Summary',
-    'Observations',
-    'Notable Data Section',
-    'Notes',
-    'Device Status',
-    'Episodes List',
-    'Other Hardware Notes',
-    'CareAlert Event List'
-  ];
   styleTag.textContent = `
     .aft-ql-flash { pointer-events: none; }
     .modern-select {
@@ -687,11 +675,20 @@ async function main(host = {}, fetchUrlOverride) {
   link.rel  = 'stylesheet';
   link.href = chrome.runtime.getURL('pdf_viewer.css');
   document.head.appendChild(link);
-  const { defaultStyleWords, config } = await import(chrome.runtime.getURL('styles.js'));
+  const { defaultStyleWords, config, defaultQuickLinks } = await import(chrome.runtime.getURL('styles.js'));
   let currentBU = localStorage.getItem('highlight_BU') || '';
   let currentOU = localStorage.getItem('highlight_OU') || '';
     function hasBUandOU() {
     return !!(currentBU && currentOU);
+  }
+  function getQuickLinksFor(bu, ou) {
+    if (bu && ou && config[bu] && config[bu][ou] && Array.isArray(config[bu][ou].quickLinks)) {
+      return config[bu][ou].quickLinks.slice();
+    }
+    if (bu && config[bu] && Array.isArray(config[bu].quickLinks)) {
+      return config[bu].quickLinks.slice();
+    }
+    return defaultQuickLinks.slice();
   }
   function updatePersonalUIState() {
     const enabled = hasBUandOU();
@@ -1309,6 +1306,9 @@ async function main(host = {}, fetchUrlOverride) {
     updateStyleWords();
     clearHighlights(container); 
     renderAllHighlights();
+    const labels = getQuickLinksFor(currentBU, currentOU);
+    renderQuickLinksGrid(labels);
+    computeAndRenderQuickLinks(labels);
   };
   ouSelect.onchange = () => {
     currentOU = ouSelect.value;
@@ -1317,6 +1317,9 @@ async function main(host = {}, fetchUrlOverride) {
     updateStyleWords();
     clearHighlights(container); 
     renderAllHighlights();
+    const labels = getQuickLinksFor(currentBU, currentOU);
+    renderQuickLinksGrid(labels);
+    computeAndRenderQuickLinks(labels);
   };
   Object.assign(toggle.style, {
     position:'fixed', top:'37px', right:'16px',
@@ -1543,21 +1546,27 @@ async function main(host = {}, fetchUrlOverride) {
     localStorage.setItem('aft_ql_collapsed', qlCollapsed ? '1' : '0');
     updateQlCollapseUI();
   });
-  QUICK_LINKS.forEach(label => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'aft-ql-btn';
-    btn.title = `Jump to "${label}"`;
-    btn.textContent = label;
-    btn.onclick = async () => {
-      const ok = await jumpToPhrase(label);
-      if (!ok) {
-        btn.classList.add('aft-ql-notfound');
-        setTimeout(() => btn.classList.remove('aft-ql-notfound'), 900);
-      }
-    };
-    qlGrid.appendChild(btn);
-  });
+  function renderQuickLinksGrid(labels) {
+    qlGrid.innerHTML = '';
+    labels.forEach(label => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'aft-ql-btn';
+      btn.title = `Jump to "${label}"`;
+      btn.textContent = label;
+      btn.onclick = async () => {
+        const ok = await jumpToPhrase(label);
+        if (!ok) {
+          btn.classList.add('aft-ql-notfound');
+          setTimeout(() => btn.classList.remove('aft-ql-notfound'), 900);
+        }
+      };
+      qlGrid.appendChild(btn);
+    });
+    qlWrap.style.display = qlGrid.children.length ? '' : 'none';
+    updateQlCollapseUI();
+  }
+  renderQuickLinksGrid(getQuickLinksFor(currentBU, currentOU));
   qlWrap.append(qlHeader, qlGrid);
   hlBody.appendChild(qlWrap);
   updateQlCollapseUI();
@@ -1715,9 +1724,9 @@ async function main(host = {}, fetchUrlOverride) {
     }
     return pages;
   }
-  async function computeAndRenderQuickLinks() {
+  async function computeAndRenderQuickLinks(labels) {
     const results = await Promise.all(
-      QUICK_LINKS.map(async label => [label, await findAllPagesFor(label)])
+      labels.map(async label => [label, await findAllPagesFor(label)])
     );
     const present = results
       .filter(([, pages]) => pages.length > 0)
@@ -1766,7 +1775,8 @@ async function main(host = {}, fetchUrlOverride) {
   }
   eventBus.on('pagesinit', async () => {
     pdfViewer.currentScaleValue = 'auto';
-    await computeAndRenderQuickLinks();
+    const labels = getQuickLinksFor(currentBU, currentOU);
+    await computeAndRenderQuickLinks(labels);
   });
   let _aftRefreshScheduled = false;
   let _aftLastReason = '';
