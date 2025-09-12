@@ -192,20 +192,23 @@ function getPageScale(pageEl) {
   return scale;
 }
 function flashRectsOnPage(pageEl, rects) {
-  const tl = pageEl.querySelector('.textLayer');
-  if (!tl) return;
-  const tlRect = tl.getBoundingClientRect();
+  const layer = pageEl.querySelector('.textLayer');
+  if (!layer) return;
+  const layerRect = layer.getBoundingClientRect();
   const overlays = [];
+  const scale = getPageScale(pageEl); // Keep the scale calculation
   rects.forEach(r => {
     const box = document.createElement('div');
     box.className = 'aft-ql-flash';
-    box.style.left   = `${r.left  - tlRect.left}px`;
-    box.style.top    = `${r.top   - tlRect.top }px`;
-    box.style.width  = `${r.width }px`;
-    box.style.height = `${r.height}px`;
-    box.style.position = 'absolute';
-    box.style.pointerEvents = 'none';
-    tl.appendChild(box);
+    box.style.cssText = `
+      position:absolute;
+      /* The main calculation is now simpler and more accurate */
+      left:${(r.left - layerRect.left)}px;
+      top:${(r.top  - layerRect.top) + Math.round(HILITE_Y_OFFSET * scale)}px;
+      width:${r.width}px; height:${r.height}px;
+      pointer-events:none; z-index:9; mix-blend-mode:multiply;
+    `;
+    layer.appendChild(box);
     overlays.push(box);
   });
   setTimeout(() => overlays.forEach(o => o.remove()), 1600);
@@ -534,6 +537,20 @@ async function main(host = {}, fetchUrlOverride) {
     'CareAlert Event List'
   ];
   styleTag.textContent = `
+    .page {
+      position: relative !important; /* Establishes the positioning context */
+    }
+    .page .canvasWrapper,
+    .page .textLayer {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: none !important;
+    }
     .aft-ql-flash { pointer-events: none; }
     .modern-select {
       color: #000;
