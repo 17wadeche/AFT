@@ -1223,11 +1223,6 @@ async function main(host = {}, fetchUrlOverride) {
     if (m2) return m2[1].trim();
     return 'red';
   }
-  function styleStrength(style){
-    if (/(?:^|;)\s*background\s*:/i.test(style)) return 3;                // strongest
-    if (/text-decoration-line\s*:\s*underline/i.test(style)) return 2;
-    return 1;                                                             // text color
-  }
   function highlightSpan(span, rules, page) {
     const walker = document.createTreeWalker(
       span,
@@ -1265,19 +1260,73 @@ async function main(host = {}, fetchUrlOverride) {
         }
       }
     }
-    const jobs = Object.values(jobsByKey).map(arr =>
-      arr.sort((a,b) => styleStrength(b.style) - styleStrength(a.style))[0]
-    );
-    const spanJobs = jobs.slice().sort((a,b) =>
-      (a.node === b.node
-        ? b.start - a.start
-        : (a.node.compareDocumentPosition(b.node) & Node.DOCUMENT_POSITION_FOLLOWING ? 1 : -1))
-    );
+    const { bg, fg } = ensureLayerContainers(page);
+    const jobs = Object.values(jobsByKey).flat();
+    for (const job of jobs) {
+      const { style } = job;
+      const hasBg   = /background\s*:/.test(style);
+      const hasUL   = /text-decoration-line\s*:\s*underline/i.test(style);
+      if (!hasBg && !hasUL) continue;
+      const { node, start, end, shift } = job;
+      if (end > node.length) continue;
+      const range = document.createRange();
+      range.setStart(node, start);
+      range.setEnd(node, end);
+      const pageRect = page.getBoundingClientRect();
+      let scale = 1;
+      const m = page.style.transform.match(/scale\(([^)]+)\)/);
+      if (m) scale = parseFloat(m[1]);
+      for (const r of range.getClientRects()) {
+        const { x, y, w, h, bottomY } = toLayerLocal(page, r);
+        if (hasBg) {
+          const box = document.createElement('div');
+          box.className = 'word-highlight';
+          if (shift) box.classList.add('shift-left');
+          box.style.cssText = `${style};
+            position:absolute;
+            left:${x}px;
+            top:${y}px;
+            width:${w}px;
+            height:${h}px;
+            pointer-events:none;
+            mix-blend-mode:multiply`;
+          bg.appendChild(box);
+        }
+        if (hasUL) {
+          const ul = document.createElement('div');
+          ul.className = 'word-underline';
+          if (shift) ul.classList.add('shift-left');
+          const ulColor = getUnderlineColorFromStyle(style);
+          const underlineHeight = 4;
+          ul.style.left  = `${x}px`;
+          ul.style.top   = `${bottomY - underlineHeight}px`;
+          ul.style.width = `${w}px`;
+          ul.style.height= `${underlineHeight}px`;
+          ul.style.backgroundImage = makeWavyDataURI(ulColor, 2, 6);
+          bg.appendChild(ul);
+        }
+      }
+      range.detach();
+    }
+    const spanJobs = jobs
+      .filter(j => {
+        const st = j.style;
+        return !/background\s*:/.test(st) && !/text-decoration-line\s*:\s*underline/i.test(st);
+      })
+      .sort((a, b) => {
+        if (a.node === b.node) return b.start - a.start;
+        return a.node.compareDocumentPosition(b.node) &
+              Node.DOCUMENT_POSITION_FOLLOWING ? 1 : -1;
+      });
     const seen = new Set();
-    for (const job of spanJobs) {
-      const k = `${job.node}|${job.start}|${job.end}`;
+    const uniqueSpanJobs = [];
+    for (const j of spanJobs) {
+      const k = `${j.node}|${j.start}|${j.end}`;
       if (seen.has(k)) continue;
       seen.add(k);
+      uniqueSpanJobs.push(j);
+    }
+    for (const job of uniqueSpanJobs) {
       const { node, start, end, style, shift } = job;
       if (end > node.length) continue;
       const target = start ? node.splitText(start) : node;
@@ -1285,9 +1334,9 @@ async function main(host = {}, fetchUrlOverride) {
       const wrap = document.createElement('span');
       wrap.classList.add('styled-word');
       if (shift) wrap.classList.add('shift-left');
-      const hasBg       = /(?:^|;)\s*background\s*:/i.test(style);
-      const hasUL       = /text-decoration-line\s*:\s*underline/i.test(style);
-      const hasColorOnly= /(?:^|;)\s*color\s*:/i.test(style) && !hasBg && !hasUL;
+      const hasBg = /(?:^|;)\s*background\s*:/i.test(style);
+      const hasUL = /text-decoration-line\s*:\s*underline/i.test(style);
+      const hasColorOnly = /(?:^|;)\s*color\s*:/i.test(style) && !hasBg && !hasUL;
       if (hasBg) {
         wrap.style.cssText =
           style +
@@ -1313,6 +1362,8 @@ async function main(host = {}, fetchUrlOverride) {
           `-webkit-text-stroke:0 ${clr} !important;` +
           `text-shadow:none !important;`;
       }
+      wrap.appendChild(target.cloneNode(true));
+      target.parentNode.replaceChild(wrap, target);
     }
   }
   function isTextStyle(rule) {
