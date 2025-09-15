@@ -167,8 +167,10 @@ function buildStyleFromFields(prop, color) {
   if (prop === 'underline') {
     return `text-decoration-line:underline;text-decoration-style:wavy;text-decoration-color:${color};text-decoration-thickness:auto;`;
   }
-  const cssProp = (prop === 'color') ? 'color' : 'background';
-  return `${cssProp}:${color};`;
+  if (prop === 'color') {
+    return `color:${color} !important;-webkit-text-fill-color:${color} !important;`;
+  }
+  return `background:${color};`;
 }
 function normalizeRuleFromStorage(r) {
   if (!r || typeof r !== 'object') return null;
@@ -1682,7 +1684,12 @@ async function main(host = {}, fetchUrlOverride) {
   eventBus.on('documentloadfailed', () => loader.remove());
   const fix = document.createElement('style');
   fix.textContent = `
-    .textLayer { opacity: 1 !important; z-index: 2 !important; }
+    .textLayer {
+      position: absolute !important;
+      inset: 0 !important;
+      opacity: 1 !important;
+      z-index: 2 !important;
+    }
     .textLayer span {
       color: transparent !important;
       -webkit-text-fill-color: transparent !important;
@@ -1691,9 +1698,9 @@ async function main(host = {}, fetchUrlOverride) {
     .styled-word{
       position: relative;
       z-index: 3;
-      -webkit-text-fill-color: currentColor !important;
       text-shadow: none !important;
       mix-blend-mode: normal !important;
+      -webkit-text-fill-color: inherit;
     }
     .word-highlight { position: absolute; pointer-events:none; mix-blend-mode:multiply; z-index:5; }
     .word-underline { position:absolute; pointer-events:none; z-index:6; height:4px;
