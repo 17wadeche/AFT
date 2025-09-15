@@ -1130,7 +1130,8 @@ async function main(host = {}, fetchUrlOverride) {
       while (w.firstChild) p.insertBefore(w.firstChild, w);
       w.remove();
     });
-    scope.querySelectorAll('.word-highlight, .word-underline').forEach(el => el.remove());
+    scope.querySelectorAll('.word-highlight, .word-underline, .word-mask')
+        .forEach(el => el.remove());
   }
   function makeWavyDataURI(color = 'red', amp = 2, wave = 6) {
     const h = amp * 2;
@@ -1682,15 +1683,11 @@ async function main(host = {}, fetchUrlOverride) {
   eventBus.on('documentloadfailed', () => loader.remove());
   const fix = document.createElement('style');
   fix.textContent = `
-    .textLayer span {
-      pointer-events:auto !important;
-      opacity:1 !important;
-      mix-blend-mode:multiply;
-    }
-    .styled-word { 
-      display: contents !important;
-      font:inherit;
-      letter-spacing: inherit !important;
+    .textLayer span { mix-blend-mode:normal; }
+    .styled-word{
+      mix-blend-mode:normal !important;
+      position:relative;         /* create a stacking context */
+      z-index:2;                 /* above the mask */
     }
     .word-highlight {
       position: absolute;
