@@ -185,30 +185,6 @@ function normalizeRuleFromStorage(r) {
     style: buildStyleFromFields(prop, color)
   };
 }
-function getPageScale(pageEl) {
-  let scale = 1;
-  const m = pageEl?.style?.transform?.match(/scale\(([^)]+)\)/);
-  if (m) scale = parseFloat(m[1]) || 1;
-  return scale;
-}
-function flashRectsOnPage(pageEl, rects) {
-  const pageRect = pageEl.getBoundingClientRect();
-  const scale = getPageScale(pageEl);
-  const overlays = [];
-  rects.forEach(r => {
-    const box = document.createElement('div');
-    box.className = 'aft-ql-flash';
-    const x = (r.left - pageRect.left - 8) / scale;
-    const y = (r.top  - pageRect.top  - 8) / scale;
-    box.style.left   = `${x}px`;
-    box.style.top    = `${y}px`;
-    box.style.width  = `${r.width / scale}px`;
-    box.style.height = `${r.height / scale}px`;
-    pageEl.appendChild(box);
-    overlays.push(box);
-  });
-  setTimeout(() => overlays.forEach(o => o.remove()), 1600);
-}
 function findFirstMatchRangeInSpan(span, needleLC) {
   if (!span || !span.firstChild || span.firstChild.nodeType !== Node.TEXT_NODE) return null;
   const text = span.textContent || '';
