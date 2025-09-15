@@ -1682,37 +1682,27 @@ async function main(host = {}, fetchUrlOverride) {
   eventBus.on('documentloadfailed', () => loader.remove());
   const fix = document.createElement('style');
   fix.textContent = `
-    /* Let PDF.js textLayer exist (for ranges/rects) but keep it invisible
-      so we don't double-paint over the canvas text. */
     .textLayer { opacity: 1 !important; z-index: 2 !important; }
     .textLayer span {
       color: transparent !important;
       -webkit-text-fill-color: transparent !important;
       mix-blend-mode: normal !important;
     }
-
-    /* Only the wrapped styled words should actually render visible text */
     .styled-word{
       position: relative;
-      z-index: 3; /* above .word-mask */
+      z-index: 3;
       color: inherit !important;
       -webkit-text-fill-color: currentColor !important;
       text-shadow: none !important;
       mix-blend-mode: normal !important;
     }
-
-    /* Overlays */
     .word-highlight { position: absolute; pointer-events:none; mix-blend-mode:multiply; z-index:5; }
     .word-underline { position:absolute; pointer-events:none; z-index:6; height:4px;
                       background-repeat:repeat-x; background-position:left bottom;
                       background-size:auto 100%; mix-blend-mode:multiply; }
     .word-mask { position:absolute; pointer-events:none; background:#fff; mix-blend-mode:normal !important; z-index:1; }
-
-    /* Subtle page chrome */
     .page { box-shadow: 0 0 6px rgba(0,0,0,.12); margin:0 auto 24px; }
     .page::after { content:""; position:absolute; left:0; right:0; bottom:-16px; border-bottom:1px dashed #888; opacity:.7; pointer-events:none; }
-
-    /* Pulse (unchanged) */
     @keyframes pulseHighlight {
       0% { filter: brightness(2.5) saturate(2); transform: scale(1); }
       50% { filter: brightness(3) saturate(3); transform: scale(1.08); }
