@@ -362,18 +362,6 @@ const config = {
     }
   },
   CRDM: {
-    quickLinks: [
-      'Device Summary',
-      'Reason for Transmission',
-      'Alert and Event Summary',
-      'Observations',
-      'Notable Data Section',
-      'Notes',
-      'Device Status',
-      'Episodes List',
-      'Other Hardware Notes',
-      'CareAlert Event List'
-    ],
     styleWords: [
       {
         style: 'color:blue',
@@ -436,6 +424,18 @@ const config = {
       }
     ],
     'Cardiac Rhythm Management': {
+      quickLinks: [
+        'Device Summary',
+        'Reason for Transmission',
+        'Alert and Event Summary',
+        'Observations',
+        'Notable Data Section',
+        'Notes',
+        'Device Status',
+        'Episodes List',
+        'Other Hardware Notes',
+        'CareAlert Event List'
+      ],
       styleWords: [
         {
           style: 'background:yellow',
