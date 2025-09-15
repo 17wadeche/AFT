@@ -821,6 +821,7 @@ async function main(host = {}, fetchUrlOverride) {
         isNew: newWordsSet.has(normWord(w)),
       }));
     });
+    if (container) container.classList.toggle('aft-color-mode', anyTextColorRule());
   }
   updateStyleWords();
   const buSelect = document.createElement('select');
@@ -1336,17 +1337,10 @@ async function main(host = {}, fetchUrlOverride) {
       const isUnderline = /text-decoration-line\s*:\s*underline/i.test(style);
       if (isUnderline) wrap.classList.add('aft-ul');
       if (shift) wrap.classList.add('shift-left');
-      let css = style;
-      const isTextColorRule = /(?:^|;)\s*color\s*:/i.test(style) && !/background\s*:|text-decoration-line\s*:\s*underline/i.test(style);
-      if (isTextColorRule) {
-        const m = /(?:^|;)\s*color\s*:\s*([^;]+)/i.exec(style);
-        const clr = (m && m[1].trim()) || 'currentColor';
-        css += `;-webkit-text-fill-color:${clr} !important;` +
-              `-webkit-text-stroke:0 ${clr} !important;` +
-              `text-shadow:none !important;`;
-      } else {
-      }
-      wrap.style.cssText = css;
+      const needsForce =
+        !/color\s*:/.test(style) &&
+        !isUnderline; 
+      wrap.style.cssText = style + (needsForce ? FORCE_TEXT_VISIBLE : '');
       wrap.appendChild(target.cloneNode(true));
       target.parentNode.replaceChild(wrap, target);
     }
@@ -1360,6 +1354,7 @@ async function main(host = {}, fetchUrlOverride) {
   }
   function renderAllHighlights() {
     if (!container) return;
+    container.classList.toggle('aft-color-mode', anyTextColorRule());
     clearHighlights(container);
     container.querySelectorAll('.page').forEach(page => {
       page.style.position = 'relative';
@@ -1482,6 +1477,7 @@ async function main(host = {}, fetchUrlOverride) {
     });
     document.body.appendChild(container);
   }
+  container.classList.toggle('aft-color-mode', anyTextColorRule());
   const loader = document.createElement('div');
   loader.id = 'aftLoader';
   Object.assign(loader.style, {
@@ -1754,6 +1750,10 @@ async function main(host = {}, fetchUrlOverride) {
   eventBus.on('pagesloaded',        () => { checkWordsDetectable(); });
   const fix = document.createElement('style');
   fix.textContent = `
+    .textLayer span {
+      pointer-events:auto !important;
+      opacity:1 !important;
+    }
     .textLayer .aft-bg,
     .textLayer .aft-fg {
       position:absolute;
@@ -1761,9 +1761,7 @@ async function main(host = {}, fetchUrlOverride) {
       pointer-events:none;
     }
     .textLayer .aft-bg { z-index: 1; }     /* highlights behind text */
-    .textLayer span {
-      pointer-events: auto !important;
-    }
+    .textLayer span    { z-index: 2; }     /* the glyph spans */
     .textLayer .aft-fg { z-index: 3; } 
     .styled-word { 
       display: contents !important;
@@ -1778,6 +1776,14 @@ async function main(host = {}, fetchUrlOverride) {
     }
   `;
   fix.textContent += `
+    .aft-color-mode .textLayer span {
+      color: inherit !important;
+      -webkit-text-fill-color: currentColor !important;
+      -webkit-text-stroke: 0 currentColor !important;
+      text-shadow: none !important;
+      filter: none !important;
+      opacity: 1 !important;
+    }
     .word-underline {
       position:absolute;
       pointer-events:none;
