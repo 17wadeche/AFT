@@ -129,7 +129,26 @@ function makeRegex(word) {
 }
 const FORCE_TEXT_VISIBLE = ';color:#000 !important;-webkit-text-fill-color:#000 !important;';
 const CSS_COLOR_KEYWORDS = [
-  'aliceblue','antiquewhite','aqua','aquamarine','azure','beige','bisque','blanchedalmond','blue','blueviolet','brown','burlywood','cadetblue','chartreuse', 'chocolate','coral','cornflowerblue','cornsilk','crimson','cyan','darkblue','darkcyan', 'darkgoldenrod','darkgray','darkgreen','darkgrey','darkkhaki','darkmagenta','darkolivegreen', 'darkorange','darkorchid','darkred','darksalmon','darkseagreen','darkslateblue','darkslategray','darkslategrey','darkturquoise','darkviolet','deeppink','deepskyblue','dimgray','dimgrey', 'dodgerblue','firebrick','floralwhite','forestgreen','fuchsia','gainsboro','ghostwhite','gold', 'goldenrod','gray','green','greenyellow','grey','honeydew','hotpink','indianred','indigo','ivory','khaki','lavender','lavenderblush','lawngreen','lemonchiffon','lightblue','lightcoral', 'lightcyan','lightgoldenrodyellow','lightgray','lightgreen','lightgrey','lightpink','lightsalmon','lightseagreen','lightskyblue','lightslategray','lightslategrey','lightsteelblue','lightyellow', 'lime','limegreen','linen','magenta','maroon','mediumaquamarine','mediumblue','mediumorchid','mediumpurple','mediumseagreen','mediumslateblue','mediumspringgreen','mediumturquoise','mediumvioletred','midnightblue','mintcream','mistyrose','moccasin','navajowhite','navy','oldlace','olive','olivedrab','orange','orangered','orchid','palegoldenrod','palegreen','paleturquoise','palevioletred','papayawhip','peachpuff','peru','pink','plum','powderblue', 'purple','rebeccapurple','red','rosybrown','royalblue','saddlebrown','salmon','sandybrown','seagreen','seashell','sienna','silver','skyblue','slateblue','slategray','slategrey','springgreen','steelblue','tan','teal','thistle','tomato','turquoise','violet','wheat','yellow','yellowgreen'
+  'aliceblue','antiquewhite','aqua','aquamarine','azure','beige','bisque','black',
+  'blanchedalmond','blue','blueviolet','brown','burlywood','cadetblue','chartreuse',
+  'chocolate','coral','cornflowerblue','cornsilk','crimson','cyan','darkblue','darkcyan',
+  'darkgoldenrod','darkgray','darkgreen','darkgrey','darkkhaki','darkmagenta','darkolivegreen',
+  'darkorange','darkorchid','darkred','darksalmon','darkseagreen','darkslateblue','darkslategray',
+  'darkslategrey','darkturquoise','darkviolet','deeppink','deepskyblue','dimgray','dimgrey',
+  'dodgerblue','firebrick','floralwhite','forestgreen','fuchsia','gainsboro','ghostwhite','gold',
+  'goldenrod','gray','green','greenyellow','grey','honeydew','hotpink','indianred','indigo','ivory',
+  'khaki','lavender','lavenderblush','lawngreen','lemonchiffon','lightblue','lightcoral',
+  'lightcyan','lightgoldenrodyellow','lightgray','lightgreen','lightgrey','lightpink','lightsalmon',
+  'lightseagreen','lightskyblue','lightslategray','lightslategrey','lightsteelblue','lightyellow',
+  'lime','limegreen','linen','magenta','maroon','mediumaquamarine','mediumblue','mediumorchid',
+  'mediumpurple','mediumseagreen','mediumslateblue','mediumspringgreen','mediumturquoise',
+  'mediumvioletred','midnightblue','mintcream','mistyrose','moccasin','navajowhite','navy',
+  'oldlace','olive','olivedrab','orange','orangered','orchid','palegoldenrod','palegreen',
+  'paleturquoise','palevioletred','papayawhip','peachpuff','peru','pink','plum','powderblue',
+  'purple','rebeccapurple','red','rosybrown','royalblue','saddlebrown','salmon','sandybrown',
+  'seagreen','seashell','sienna','silver','skyblue','slateblue','slategray','slategrey','snow',
+  'springgreen','steelblue','tan','teal','thistle','tomato','turquoise','violet','wheat','white',
+  'whitesmoke','yellow','yellowgreen'
 ];
 function parseStyleToFields(styleStr) {
   const s = styleStr.toLowerCase();
@@ -577,6 +596,7 @@ async function main(host = {}, fetchUrlOverride) {
   }
   const styleTag = document.createElement('style');
   styleTag.textContent = `
+    .aft-ql-flash { pointer-events: none; }
     .modern-select {
       color: #000;
       -webkit-appearance: none;
@@ -698,7 +718,7 @@ async function main(host = {}, fetchUrlOverride) {
       pointer-events: none;
       background: rgba(255, 235, 59, .65); /* warm yellow */
       outline: 1px solid rgba(0,0,0,.12);
-      z-index: 0;
+      z-index: 9999;
       animation: aftQlFlash 1.4s ease-out 1 forwards;
       mix-blend-mode: multiply;
     }
@@ -798,8 +818,9 @@ async function main(host = {}, fetchUrlOverride) {
         isNew: newWordsSet.has(normWord(w)),
       }));
     });
+    pulseMode = newWordsSet.size > 0;
   }
-  updateStyleWords({});
+  updateStyleWords({suppressPulse:true});
   const buSelect = document.createElement('select');
   buSelect.style.marginLeft = '-200px';
   buSelect.style.width = 'calc(100% + 23px)';
@@ -1259,6 +1280,7 @@ async function main(host = {}, fetchUrlOverride) {
           const box = document.createElement('div');
           box.className = 'word-highlight';
           if (shift) box.classList.add('shift-left');
+          if (pulseMode && job.isNew) box.classList.add('pulse');
           box.style.cssText = `${style};
             position:absolute;
             left:${x}px;
@@ -1273,6 +1295,7 @@ async function main(host = {}, fetchUrlOverride) {
           const ul = document.createElement('div');
           ul.className = 'word-underline';
           if (shift) ul.classList.add('shift-left');
+          if (pulseMode && job.isNew) ul.classList.add('pulse');
           const ulColor = getUnderlineColorFromStyle(style);
           const underlineHeight = 4;
           ul.style.left  = `${x}px`;
@@ -1280,8 +1303,7 @@ async function main(host = {}, fetchUrlOverride) {
           ul.style.width = `${w}px`;
           ul.style.height= `${underlineHeight}px`;
           ul.style.backgroundImage = makeWavyDataURI(ulColor, 2, 6);
-          const { fg } = ensureLayerContainers(page);
-          fg.appendChild(ul);
+          bg.appendChild(ul);
         }
       }
       range.detach();
@@ -1314,6 +1336,7 @@ async function main(host = {}, fetchUrlOverride) {
       const isUnderline = /text-decoration-line\s*:\s*underline/i.test(style);
       if (isUnderline) wrap.classList.add('aft-ul');
       if (shift) wrap.classList.add('shift-left');
+      if (pulseMode && job.isNew) wrap.classList.add('pulse');
       const needsForce =
         !/color\s*:/.test(style) &&
         !isUnderline; 
@@ -1351,6 +1374,7 @@ async function main(host = {}, fetchUrlOverride) {
         highlightSpan(span, styleWordsToUse, page);
       });
     });
+    if (pulseMode) setTimeout(() => { pulseMode = false; }, 1000);
     updateNoStylesBanner();
   }
   function refreshAll() {
@@ -1725,14 +1749,9 @@ async function main(host = {}, fetchUrlOverride) {
   eventBus.on('pagesloaded',        () => { checkWordsDetectable(); });
   const fix = document.createElement('style');
   fix.textContent = `
-    .textLayer{position:relative; isolation:isolate;}
     .textLayer span {
-      position: absolute; 
-      z-index: 2; 
-      pointer-events: auto !important;
-      opacity: 1 !important;
-      color: #000 !important;
-      -webkit-text-fill-color: #000 !important;
+      pointer-events:auto !important;
+      opacity:1 !important;
     }
     .textLayer .aft-bg,
     .textLayer .aft-fg {
@@ -1740,7 +1759,8 @@ async function main(host = {}, fetchUrlOverride) {
       left:0; top:0; right:0; bottom:0;
       pointer-events:none;
     }
-    .textLayer .aft-bg { z-index: 1; }   
+    .textLayer .aft-bg { z-index: 1; }     /* highlights behind text */
+    .textLayer span    { z-index: 2; }     /* the glyph spans */
     .textLayer .aft-fg { z-index: 3; } 
     .styled-word { 
       display: contents !important;
@@ -1751,10 +1771,23 @@ async function main(host = {}, fetchUrlOverride) {
       position: absolute;
       pointer-events: none;
       mix-blend-mode: multiply;  
-      z-index:1;    
     }
   `;
   fix.textContent += `
+    @keyframes pulseHighlight {
+      0%   { filter: brightness(2.5) saturate(2); transform: scale(1);   }
+      50%  { filter: brightness(3) saturate(3); transform: scale(1.08); }
+      100% { filter: brightness(1.0) saturate(1.0); transform: scale(1);   }
+    }
+    .word-highlight.pulse {
+      animation: pulseHighlight 0.9s ease-out 0s 2 alternate;
+      mix-blend-mode: normal !important;
+      z-index: 10 !important;
+      opacity: 1 !important;
+    }
+    .styled-word.pulse {
+      animation: pulseHighlight 0.9s ease-out 0s 2 alternate;
+    }
     .word-underline {
       position:absolute;
       pointer-events:none;
