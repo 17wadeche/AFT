@@ -1248,6 +1248,7 @@ async function main(host = {}, fetchUrlOverride) {
           re.lastIndex = 0;
           let m;
           while ((m = re.exec(text))) {  
+            if (!m[0] || !/\S/u.test(m[0])) continue;
             if (!textNode.__highlightId) {
               textNode.__highlightId = Symbol();
             }
@@ -1285,6 +1286,7 @@ async function main(host = {}, fetchUrlOverride) {
       target.splitText(end - start);
       const wrap = document.createElement('span');
       wrap.classList.add('styled-word');
+      wrap.style.whiteSpace = 'inherit';
       if (shift) wrap.classList.add('shift-left');
       const hasBg       = /(?:^|;)\s*background\s*:/i.test(style);
       const hasUL       = /text-decoration-line\s*:\s*underline/i.test(style);
@@ -1311,8 +1313,8 @@ async function main(host = {}, fetchUrlOverride) {
         wrap.style.cssText =
           style +
           `;-webkit-text-fill-color:${clr} !important;` +
-          `-webkit-text-stroke:0 ${clr} !important;` +
-          `text-shadow:none !important;`;
+          `text-shadow:none !important;` +
+          `mix-blend-mode:normal;`;
       }
       const parent = target.parentNode;
       parent.replaceChild(wrap, target);  
@@ -1735,9 +1737,13 @@ async function main(host = {}, fetchUrlOverride) {
       line-height: inherit;
       letter-spacing: inherit !important;
       word-spacing: inherit !important;
+      white-space: inherit;
       vertical-align: baseline;
       transform: translateZ(0);
       mix-blend-mode:multiply;
+      text-rendering: geometricPrecision;
+      -webkit-font-smoothing: antialiased;
+      font-variant-ligatures: inherit;
     }
     .word-highlight {
       position: absolute;
