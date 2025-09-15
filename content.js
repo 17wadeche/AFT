@@ -1333,35 +1333,20 @@ async function main(host = {}, fetchUrlOverride) {
       target.splitText(end - start);
       const wrap = document.createElement('span');
       wrap.classList.add('styled-word');
+      const isUnderline = /text-decoration-line\s*:\s*underline/i.test(style);
+      if (isUnderline) wrap.classList.add('aft-ul');
       if (shift) wrap.classList.add('shift-left');
-      const hasBg = /(?:^|;)\s*background\s*:/i.test(style);
-      const hasUL = /text-decoration-line\s*:\s*underline/i.test(style);
-      const hasColorOnly = /(?:^|;)\s*color\s*:/i.test(style) && !hasBg && !hasUL;
-      if (hasBg) {
-        wrap.style.cssText =
-          style +
-          ';color:transparent !important;' +
-          ';-webkit-text-fill-color:transparent !important;' +
-          ';text-shadow:none !important;';
-      } else if (hasUL) {
-        const clr = (style.match(/text-decoration-color\s*:\s*([^;]+)/i)?.[1] || 'red').trim();
-        wrap.style.cssText =
-          `text-decoration-line:underline;` +
-          `text-decoration-style:wavy;` +
-          `text-decoration-thickness:auto;` +
-          `text-decoration-color:${clr};` +
-          `color:transparent !important;` +
-          `-webkit-text-fill-color:transparent !important;` +
-          `text-shadow:none !important;`;
-      } else if (hasColorOnly) {
+      let css = style;
+      const isTextColorRule = /(?:^|;)\s*color\s*:/i.test(style) && !/background\s*:|text-decoration-line\s*:\s*underline/i.test(style);
+      if (isTextColorRule) {
         const m = /(?:^|;)\s*color\s*:\s*([^;]+)/i.exec(style);
         const clr = (m && m[1].trim()) || 'currentColor';
-        wrap.style.cssText =
-          style +
-          `;-webkit-text-fill-color:${clr} !important;` +
-          `-webkit-text-stroke:0 ${clr} !important;` +
-          `text-shadow:none !important;`;
+        css += `;-webkit-text-fill-color:${clr} !important;` +
+              `-webkit-text-stroke:0 ${clr} !important;` +
+              `text-shadow:none !important;`;
+      } else {
       }
+      wrap.style.cssText = css;
       wrap.appendChild(target.cloneNode(true));
       target.parentNode.replaceChild(wrap, target);
     }
@@ -1780,12 +1765,10 @@ async function main(host = {}, fetchUrlOverride) {
       pointer-events: auto !important;
     }
     .textLayer .aft-fg { z-index: 3; } 
-    .styled-word {
-      display: inline !important;
-      font: inherit;
+    .styled-word { 
+      display: contents !important;
+      font:inherit;
       letter-spacing: inherit !important;
-      box-decoration-break: clone;
-      -webkit-box-decoration-break: clone;
     }
     .word-highlight {
       position: absolute;
