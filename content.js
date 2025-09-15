@@ -1477,7 +1477,6 @@ async function main(host = {}, fetchUrlOverride) {
     });
     document.body.appendChild(container);
   }
-  container.classList.toggle('aft-color-mode', anyTextColorRule());
   const loader = document.createElement('div');
   loader.id = 'aftLoader';
   Object.assign(loader.style, {
