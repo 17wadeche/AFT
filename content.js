@@ -211,14 +211,13 @@ customRules = customRules
   .map(normalizeRuleFromStorage)
   .filter(Boolean);
 async function main(host = {}, fetchUrlOverride) {
+  const dpr = window.devicePixelRatio || 1;
+  const px  = v => (Math.round(v * dpr) / dpr);
   let wordsDetectable = null;
   let _checkingWords = null;
   function hasNonEmptyTextSpan() {
     const span = container?.querySelector('.textLayer span');
     return !!(span && (span.textContent || '').trim());
-  }
-  function anyTextColorRule() {
-    return styleWordsToUse.some(r => isTextStyle(r));
   }
   async function checkWordsDetectable(force = false) {
     if (!force && (wordsDetectable !== null || _checkingWords)) return wordsDetectable;
@@ -303,10 +302,10 @@ async function main(host = {}, fetchUrlOverride) {
       const box = document.createElement('div');
       box.className = 'aft-ql-flash';
       const { x, y, w, h } = toLayerLocal(pageEl, r);
-      box.style.left   = `${x}px`;
-      box.style.top    = `${y}px`;
-      box.style.width  = `${w}px`;
-      box.style.height = `${h}px`;
+      box.style.left   = px(x) + 'px';
+      box.style.top    = px(y) + 'px';
+      box.style.width  = px(w) + 'px';
+      box.style.height = px(h) + 'px';
       bg.appendChild(box);
       overlays.push(box);
     });
@@ -491,12 +490,14 @@ async function main(host = {}, fetchUrlOverride) {
   function toLayerLocal(pageEl, clientRect) {
     const layer = getTextLayer(pageEl);
     const layerRect = layer.getBoundingClientRect();
+    const pageNumber = getPageNumberForDiv(pageEl);
+    const scale = getPageScale(pageEl, pageNumber) || 1;
     return {
-      x: clientRect.left   - layerRect.left,
-      y: clientRect.top    - layerRect.top,
-      w: clientRect.width,
-      h: clientRect.height,
-      bottomY: clientRect.bottom - layerRect.top
+      x: (clientRect.left   - layerRect.left)   / scale,
+      y: (clientRect.top    - layerRect.top)    / scale,
+      w:  clientRect.width                      / scale,
+      h:  clientRect.height                     / scale,
+      bottomY: (clientRect.bottom - layerRect.top) / scale
     };
   }
   function ensureLayerContainers(pageEl) {
@@ -1292,11 +1293,12 @@ async function main(host = {}, fetchUrlOverride) {
         for (const r of rects) {
           const { x, y, w, h } = toLayerLocal(pageEl, r);
           const ul = document.createElement('div');
+          const underlineH = Math.max(2, Math.round(3 / (window.devicePixelRatio || 1)));
           ul.className = 'word-underline';
           ul.style.left = `${x}px`;
-          ul.style.top  = `${y + h - 3}px`;
+          ul.style.top    = px(y + h - underlineH) + 'px';
           ul.style.width = `${w}px`;
-          ul.style.height = `3px`;
+          ul.style.height = px(underlineH) + 'px';
           ul.style.backgroundImage = makeWavyDataURI(clr, 2, 6);
           fg.appendChild(ul);
         }
@@ -1308,10 +1310,10 @@ async function main(host = {}, fetchUrlOverride) {
           const { x, y, w, h } = toLayerLocal(pageEl, r);
           const box = document.createElement('div');
           box.className = 'word-highlight';
-          box.style.left = `${x}px`;
-          box.style.top  = `${y}px`;
-          box.style.width  = `${w}px`;
-          box.style.height = `${h}px`;
+          box.style.left   = px(x) + 'px';
+          box.style.top    = px(y) + 'px';
+          box.style.width  = px(w) + 'px';
+          box.style.height = px(h) + 'px';
           box.style.background = clr;
           bg.appendChild(box);
         }
