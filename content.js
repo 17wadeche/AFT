@@ -167,10 +167,8 @@ function buildStyleFromFields(prop, color) {
   if (prop === 'underline') {
     return `text-decoration-line:underline;text-decoration-style:wavy;text-decoration-color:${color};text-decoration-thickness:auto;`;
   }
-  if (prop === 'color') {
-    return `color:${color} !important;-webkit-text-fill-color:${color} !important;`;
-  }
-  return `background:${color};`;
+  const cssProp = (prop === 'color') ? 'color' : 'background';
+  return `${cssProp}:${color};`;
 }
 function normalizeRuleFromStorage(r) {
   if (!r || typeof r !== 'object') return null;
@@ -737,9 +735,6 @@ async function main(host = {}, fetchUrlOverride) {
     if (includeCustom && customRules.length && hasBUandOU()) {
       styleWordsToUse.push(...customRules.map(r => ({ style: r.style, words: r.words })));
     }
-    styleWordsToUse = styleWordsToUse
-      .map(normalizeRuleFromStorage)
-      .filter(Boolean);
     activeWordsSet = new Set();
     styleWordsToUse.forEach(r => {
       r.words.forEach(w => activeWordsSet.add(normWord(w)));
@@ -1135,8 +1130,7 @@ async function main(host = {}, fetchUrlOverride) {
       while (w.firstChild) p.insertBefore(w.firstChild, w);
       w.remove();
     });
-    scope.querySelectorAll('.word-highlight, .word-underline, .word-mask')
-        .forEach(el => el.remove());
+    scope.querySelectorAll('.word-highlight, .word-underline').forEach(el => el.remove());
   }
   function makeWavyDataURI(color = 'red', amp = 2, wave = 6) {
     const h = amp * 2;
@@ -1185,8 +1179,7 @@ async function main(host = {}, fetchUrlOverride) {
               end:   m.index + m[0].length,
               style: rule.style,
               shift,
-              isNew: rxObj.isNew === true,
-              isText: isTextStyle(rule)
+              isNew: rxObj.isNew === true
             });
           }
         }
@@ -1195,8 +1188,9 @@ async function main(host = {}, fetchUrlOverride) {
     const jobs = Object.values(jobsByKey).flat();
     for (const job of jobs) {
       const { style } = job;
-      const hasBg = /background\s*:/.test(style);
-      const hasUL = /text-decoration-line\s*:\s*underline/i.test(style);
+      const hasBg   = /background\s*:/.test(style);
+      const hasUL   = /text-decoration-line\s*:\s*underline/i.test(style);
+      if (!hasBg && !hasUL) continue;
       const { node, start, end, shift } = job;
       if (end > node.length) continue;
       const range = document.createRange();
@@ -1204,26 +1198,22 @@ async function main(host = {}, fetchUrlOverride) {
       range.setEnd(node, end);
       const pageRect = page.getBoundingClientRect();
       let scale = 1;
-      const m = (page.style.transform || '').match(/scale\(([^)]+)\)/);
-      if (m) scale = parseFloat(m[1]) || 1;
+      const m = page.style.transform.match(/scale\(([^)]+)\)/);
+      if (m) scale = parseFloat(m[1]);
       for (const r of range.getClientRects()) {
-        const x = (r.left  - pageRect.left  - 8) / scale;
-        const y = (r.top   - pageRect.top   - 8) / scale;
-        const w =  r.width  / scale;
-        const h =  r.height / scale;
-        const yUL = (r.bottom - pageRect.top - 8) / scale - 3;
-        const eps = Math.max(1, Math.ceil(1.25 * (window.devicePixelRatio || 1))) / scale;
         if (hasBg) {
           const box = document.createElement('div');
           box.className = 'word-highlight';
           if (shift) box.classList.add('shift-left');
           if (pulseMode && job.isNew) box.classList.add('pulse');
+          const x = (r.left - pageRect.left - 8) / scale;
+          const y = (r.top  - pageRect.top  - 8) / scale;
           box.style.cssText = `${style};
             position:absolute;
             left:${x}px;
             top:${y}px;
-            width:${w}px;
-            height:${h}px;
+            width:${r.width  / scale}px;
+            height:${r.height / scale}px;
             pointer-events:none;
             mix-blend-mode:multiply;
             z-index:5`;
@@ -1235,10 +1225,14 @@ async function main(host = {}, fetchUrlOverride) {
           if (shift) ul.classList.add('shift-left');
           if (pulseMode && job.isNew) ul.classList.add('pulse');
           const ulColor = getUnderlineColorFromStyle(style);
-          ul.style.left   = `${x}px`;
-          ul.style.top    = `${yUL}px`;
-          ul.style.width  = `${w}px`;
-          ul.style.height = `4px`;
+          const x = (r.left - pageRect.left - 8) / scale;
+          const y = (r.bottom - pageRect.top - 8 - 3) / scale; 
+          const w = r.width / scale;
+          const h = 4;
+          ul.style.left  = `${x}px`;
+          ul.style.top   = `${y}px`;
+          ul.style.width = `${w}px`;
+          ul.style.height= `${h}px`;
           ul.style.backgroundImage = makeWavyDataURI(ulColor, 2, 6);
           page.appendChild(ul);
         }
@@ -1263,15 +1257,9 @@ async function main(host = {}, fetchUrlOverride) {
       seen.add(k);
       uniqueSpanJobs.push(j);
     }
-    const liveJobs = uniqueSpanJobs.filter(j => j.node && j.node.isConnected);
-    const occupied = new Map();
-    for (const job of liveJobs) {
+    for (const job of uniqueSpanJobs) {
       const { node, start, end, style, shift } = job;
-      if (!node.isConnected || end > node.length) continue;
-      const occ = occupied.get(node) || [];
-      if (occ.some(([s,e]) => !(end <= s || start >= e))) {
-        continue;
-      }
+      if (end > node.length) continue;
       const target = start ? node.splitText(start) : node;
       target.splitText(end - start);
       const wrap = document.createElement('span');
@@ -1280,17 +1268,12 @@ async function main(host = {}, fetchUrlOverride) {
       if (isUnderline) wrap.classList.add('aft-ul');
       if (shift) wrap.classList.add('shift-left');
       if (pulseMode && job.isNew) wrap.classList.add('pulse');
-      const PAINT_VISIBLE_FIX =
-        ';position:relative;z-index:3;' +
-        '-webkit-text-fill-color:currentColor !important;' +
-        'text-shadow:none !important;mix-blend-mode:normal;';
-      wrap.style.cssText = style + PAINT_VISIBLE_FIX;
-      if (target.parentNode) {
-        target.parentNode.insertBefore(wrap, target);
-        wrap.appendChild(target); // move the actual text node inside the wrapper
-        occ.push([start, end]);
-        occupied.set(node, occ);
-      }
+      const needsForce =
+        !/color\s*:/.test(style) &&
+        !isUnderline; 
+      wrap.style.cssText = style + (needsForce ? FORCE_TEXT_VISIBLE : '');
+      wrap.appendChild(target.cloneNode(true));
+      target.parentNode.replaceChild(wrap, target);
     }
   }
   function isTextStyle(rule) {
@@ -1688,38 +1671,58 @@ async function main(host = {}, fetchUrlOverride) {
   eventBus.on('documentloadfailed', () => loader.remove());
   const fix = document.createElement('style');
   fix.textContent = `
-    .textLayer {
-      position: absolute !important;
-      inset: 0 !important;
-      opacity: 1 !important;
-      z-index: 2 !important;
+    .textLayer span {
+      pointer-events:auto !important;
+      opacity:1 !important;
+      mix-blend-mode:multiply;
     }
-    .textLayer span:not(.styled-word) {
-      color: transparent !important;
-      -webkit-text-fill-color: transparent !important;
-      mix-blend-mode: normal !important;
+    .styled-word { 
+      display: contents !important;
+      font:inherit;
+      letter-spacing: inherit !important;
     }
-    .styled-word{
-      position: relative;
-      z-index: 3;
-      text-shadow: none !important;
-      mix-blend-mode: normal !important;
-      -webkit-text-fill-color: inherit;
+    .word-highlight {
+      position: absolute;
+      pointer-events: none;
+      mix-blend-mode: multiply;  
     }
-    .word-highlight { position: absolute; pointer-events:none; mix-blend-mode:multiply; z-index:5; }
-    .word-underline { position:absolute; pointer-events:none; z-index:6; height:4px;
-                      background-repeat:repeat-x; background-position:left bottom;
-                      background-size:auto 100%; mix-blend-mode:multiply; }
-    .word-mask { position:absolute; pointer-events:none; background:#fff; mix-blend-mode:normal !important; z-index:1; }
-    .page { box-shadow: 0 0 6px rgba(0,0,0,.12); margin:0 auto 24px; }
-    .page::after { content:""; position:absolute; left:0; right:0; bottom:-16px; border-bottom:1px dashed #888; opacity:.7; pointer-events:none; }
+  `;
+  fix.textContent += `
     @keyframes pulseHighlight {
-      0% { filter: brightness(2.5) saturate(2); transform: scale(1); }
-      50% { filter: brightness(3) saturate(3); transform: scale(1.08); }
-      100% { filter: brightness(1) saturate(1); transform: scale(1); }
+      0%   { filter: brightness(2.5) saturate(2); transform: scale(1);   }
+      50%  { filter: brightness(3) saturate(3); transform: scale(1.08); }
+      100% { filter: brightness(1.0) saturate(1.0); transform: scale(1);   }
     }
-    .word-highlight.pulse { animation: pulseHighlight .9s ease-out 0s 2 alternate; mix-blend-mode:normal!important; z-index:10!important; opacity:1!important; }
-    .styled-word.pulse   { animation: pulseHighlight .9s ease-out 0s 2 alternate; }
+    .word-highlight.pulse {
+      animation: pulseHighlight 0.9s ease-out 0s 2 alternate;
+      mix-blend-mode: normal !important;
+      z-index: 10 !important;
+      opacity: 1 !important;
+    }
+    .styled-word.pulse {
+      animation: pulseHighlight 0.9s ease-out 0s 2 alternate;
+    }
+    .word-underline {
+      position:absolute;
+      pointer-events:none;
+      z-index:6;
+      height:4px;
+      background-repeat:repeat-x;
+      background-position:left bottom;
+      background-size:auto 100%;
+      mix-blend-mode:multiply;
+    }
+    .page { box-shadow: 0 0 6px rgba(0,0,0,.12); margin:0 auto 24px; }
+    .page::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -16px;
+      border-bottom: 1px dashed #888;
+      opacity: .7;
+      pointer-events: none;
+    }
   `;
   document.head.appendChild(fix);
   linkService.setViewer(pdfViewer);
