@@ -846,6 +846,8 @@ async function main(host = {}, fetchUrlOverride) {
   `;
   customPanelHdr.appendChild(customPanelClose);
   const customPanelBody = document.createElement('div');
+  customPanelBody.style.maxHeight = '60vh';
+  customPanelBody.style.overflow = 'auto';
   customPanel.append(customPanelHdr, customPanelBody);
   function makeColorSelect(selected) {
     const sel = document.createElement('select');
