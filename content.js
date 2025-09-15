@@ -270,6 +270,13 @@ async function main(host = {}, fetchUrlOverride) {
     }
     return 1;
   }
+  function getPageNumberForDiv(pageEl) {
+    return (
+      +pageEl.getAttribute('data-page-number') ||
+      (pdfViewer?._pages?.findIndex(p => p?.div === pageEl) + 1) ||
+      1
+    );
+  }
   function getLayerRect(pageEl) {
     const tl = pageEl.querySelector('.textLayer');
     return (tl ? tl.getBoundingClientRect() : pageEl.getBoundingClientRect());
@@ -287,11 +294,12 @@ async function main(host = {}, fetchUrlOverride) {
     };
   }
   function flashRectsOnPage(pageEl, rects) {
+    const pageNumber = getPageNumberForDiv(pageEl);
     const overlays = [];
     rects.forEach(r => {
       const box = document.createElement('div');
       box.className = 'aft-ql-flash';
-      const { x, y, w, h } = toPageLocal(pageEl, r);
+      const { x, y, w, h } = toPageLocal(pageEl, r, pageNumber);
       box.style.left   = `${x}px`;
       box.style.top    = `${y}px`;
       box.style.width  = `${w}px`;
@@ -362,7 +370,8 @@ async function main(host = {}, fetchUrlOverride) {
   function flashFirstSpanMatchOnPage(pageEl, phrase) {
     if (!phrase) return false;
     const pageRect = pageEl.getBoundingClientRect();
-    const scale = getPageScale(pageEl);
+    const pageNumber = getPageNumberForDiv(pageEl);
+    const scale = getPageScale(pageEl, pageNumber);
     const isNonWord = s => /^[^\p{L}\p{N}]+$/u.test(s || "");
     const tokenAlts = t => (t === "and" ? ["and", "&"] : [t]);
     const toLC = s => (s || "").toLowerCase();
@@ -431,7 +440,7 @@ async function main(host = {}, fetchUrlOverride) {
         }
         if (rects.length) {
           const layerRect = getLayerRect(pageEl);
-          const scale = getPageScale(pageEl);
+          const scale = getPageScale(pageEl, pageNumber);
           const yLocal = (rects[0].top - layerRect.top) / scale;
           const target = pageEl.offsetTop + Math.max(0, yLocal - 60);
           container.scrollTo({ top: target, behavior: 'smooth' });
@@ -1240,6 +1249,7 @@ async function main(host = {}, fetchUrlOverride) {
         }
       }
     }
+    const pageNumber = getPageNumberForDiv(page);
     const jobs = Object.values(jobsByKey).flat();
     for (const job of jobs) {
       const { style } = job;
@@ -1257,7 +1267,7 @@ async function main(host = {}, fetchUrlOverride) {
       if (m) scale = parseFloat(m[1]);
       for (const r of range.getClientRects()) {
         const layerRect = getLayerRect(page);
-        const { x, y, w, h, bottomY } = toPageLocal(page, r);
+        const { x, y, w, h, bottomY } = toPageLocal(page, r, pageNumber);
         if (hasBg) {
           const box = document.createElement('div');
           box.className = 'word-highlight';
