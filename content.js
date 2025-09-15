@@ -1313,8 +1313,6 @@ async function main(host = {}, fetchUrlOverride) {
           `-webkit-text-stroke:0 ${clr} !important;` +
           `text-shadow:none !important;`;
       }
-      wrap.appendChild(target.cloneNode(true));
-      target.parentNode.replaceChild(wrap, target);
     }
   }
   function isTextStyle(rule) {
