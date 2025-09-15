@@ -1229,14 +1229,13 @@ async function main(host = {}, fetchUrlOverride) {
     if (/text-decoration-line\s*:\s*underline/i.test(style)) return 2;
     return 1;                                                             // text color
   }
-  function highlightSpan(span, rules, page) {
+  function highlightSpan(span, rules, pageEl) {
     const walker = document.createTreeWalker(
       span,
       NodeFilter.SHOW_TEXT,
-      { acceptNode: n => n.data.trim() 
-        ? NodeFilter.FILTER_ACCEPT
-        : NodeFilter.FILTER_REJECT 
-      }
+      { acceptNode: n => n.data && n.data.trim()
+          ? NodeFilter.FILTER_ACCEPT
+          : NodeFilter.REJECT }
     );
     const jobsByKey = Object.create(null);
     for (let textNode; (textNode = walker.nextNode()); ) {
@@ -1247,78 +1246,74 @@ async function main(host = {}, fetchUrlOverride) {
           if (!(re instanceof RegExp)) continue;
           re.lastIndex = 0;
           let m;
-          while ((m = re.exec(text))) {  
+          while ((m = re.exec(text))) {
             if (!m[0] || !/\S/u.test(m[0])) continue;
-            if (!textNode.__highlightId) {
-              textNode.__highlightId = Symbol();
-            }
-            const key = `${String(textNode.__highlightId)}|${m.index}|${m[0].length}`;
-            const before = text[m.index - 1];
-            const shift  = before === '*' || (before === ' ' && text[m.index - 2] === '*');
+            if (!textNode.__hlId) textNode.__hlId = Symbol();
+            const key = `${String(textNode.__hlId)}|${m.index}|${m[0].length}`;
             (jobsByKey[key] ??= []).push({
-              node: textNode,
+              node:  textNode,
               start: m.index,
               end:   m.index + m[0].length,
-              style: rule.style,
-              shift,
-              isNew: rxObj.isNew === true
+              style: rule.style
             });
           }
         }
       }
     }
+    const styleStrength = (style) => {
+      if (/(?:^|;)\s*background\s*:/i.test(style)) return 3;                   // bg strongest
+      if (/text-decoration-line\s*:\s*underline/i.test(style)) return 2;       // underline
+      return 1;                                                                // text color
+    };
     const jobs = Object.values(jobsByKey).map(arr =>
       arr.sort((a,b) => styleStrength(b.style) - styleStrength(a.style))[0]
     );
-    const spanJobs = jobs.slice().sort((a,b) =>
-      (a.node === b.node
-        ? b.start - a.start
-        : (a.node.compareDocumentPosition(b.node) & Node.DOCUMENT_POSITION_FOLLOWING ? 1 : -1))
-    );
-    const seen = new Set();
-    for (const job of spanJobs) {
-      const k = `${job.node}|${job.start}|${job.end}`;
-      if (seen.has(k)) continue;
-      seen.add(k);
-      const { node, start, end, style, shift } = job;
-      if (end > node.length) continue;
-      const target = start ? node.splitText(start) : node;
-      target.splitText(end - start);
-      const wrap = document.createElement('span');
-      wrap.classList.add('styled-word');
-      wrap.style.whiteSpace = 'inherit';
-      if (shift) wrap.classList.add('shift-left');
-      const hasBg       = /(?:^|;)\s*background\s*:/i.test(style);
-      const hasUL       = /text-decoration-line\s*:\s*underline/i.test(style);
-      const hasColorOnly= /(?:^|;)\s*color\s*:/i.test(style) && !hasBg && !hasUL;
-      if (hasBg) {
-        wrap.style.cssText =
-          style +
-          ';color:transparent !important;' +
-          ';-webkit-text-fill-color:transparent !important;' +
-          ';text-shadow:none !important;';
-      } else if (hasUL) {
-        const clr = (style.match(/text-decoration-color\s*:\s*([^;]+)/i)?.[1] || 'red').trim();
-        wrap.style.cssText =
-          `text-decoration-line:underline;` +
-          `text-decoration-style:wavy;` +
-          `text-decoration-thickness:auto;` +
-          `text-decoration-color:${clr};` +
-          `color:transparent !important;` +
-          `-webkit-text-fill-color:transparent !important;` +
-          `text-shadow:none !important;`;
-      } else if (hasColorOnly) {
-        const m = /(?:^|;)\s*color\s*:\s*([^;]+)/i.exec(style);
-        const clr = (m && m[1].trim()) || 'currentColor';
-        wrap.style.cssText =
-          style +
-          `;-webkit-text-fill-color:${clr} !important;` +
-          `text-shadow:none !important;` +
-          `mix-blend-mode:normal;`;
+    if (!jobs.length) return;
+    const { bg, fg } = ensureLayerContainers(pageEl);
+    const toRects = (node, start, end) => {
+      const rng = document.createRange();
+      rng.setStart(node, start);
+      rng.setEnd(node, end);
+      const rects = Array.from(rng.getClientRects()).filter(r => r.width && r.height);
+      try { rng.detach?.(); } catch {}
+      return rects;
+    };
+    const isUnderline = s => /text-decoration-line\s*:\s*underline/i.test(s);
+    const hasBg      = s => /(?:^|;)\s*background\s*:/i.test(s);
+    const hasColor   = s => /(?:^|;)\s*color\s*:/i.test(s) && !hasBg(s) && !isUnderline(s);
+    const bgColorOf  = s => (/(?:^|;)\s*background\s*:\s*([^;]+)/i.exec(s)?.[1] || 'yellow').trim();
+    const textColorOf= s => (/(?:^|;)\s*color\s*:\s*([^;]+)/i.exec(s)?.[1] || 'black').trim();
+    const ulColorOf  = s => (s.match(/text-decoration-color\s*:\s*([^;]+)/i)?.[1] || 'red').trim();
+    for (const job of jobs) {
+      const rects = toRects(job.node, job.start, job.end);
+      if (!rects.length) continue;
+      if (isUnderline(job.style)) {
+        const clr = ulColorOf(job.style);
+        for (const r of rects) {
+          const { x, y, w, h } = toLayerLocal(pageEl, r);
+          const ul = document.createElement('div');
+          ul.className = 'word-underline';
+          ul.style.left = `${x}px`;
+          ul.style.top  = `${y + h - 3}px`;   // 3px wave height looks good
+          ul.style.width = `${w}px`;
+          ul.style.height = `3px`;
+          ul.style.backgroundImage = makeWavyDataURI(clr, 2, 6);
+          fg.appendChild(ul);
+        }
+        continue;
       }
-      const parent = target.parentNode;
-      parent.replaceChild(wrap, target);  
-      wrap.appendChild(target);    
+      const clr = hasBg(job.style) ? bgColorOf(job.style) : textColorOf(job.style);
+      for (const r of rects) {
+        const { x, y, w, h } = toLayerLocal(pageEl, r);
+        const box = document.createElement('div');
+        box.className = 'word-highlight';
+        box.style.left = `${x}px`;
+        box.style.top  = `${y}px`;
+        box.style.width  = `${w}px`;
+        box.style.height = `${h}px`;
+        box.style.background = clr;
+        bg.appendChild(box);
+      }
     }
   }
   function isTextStyle(rule) {
