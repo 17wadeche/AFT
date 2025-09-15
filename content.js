@@ -1190,9 +1190,8 @@ async function main(host = {}, fetchUrlOverride) {
     const jobs = Object.values(jobsByKey).flat();
     for (const job of jobs) {
       const { style } = job;
-      const hasBg   = /background\s*:/.test(style);
-      const hasUL   = /text-decoration-line\s*:\s*underline/i.test(style);
-      if (!hasBg && !hasUL) continue;
+      const hasBg = /background\s*:/.test(style);
+      const hasUL = /text-decoration-line\s*:\s*underline/i.test(style);
       const { node, start, end, shift } = job;
       if (end > node.length) continue;
       const range = document.createRange();
@@ -1200,22 +1199,26 @@ async function main(host = {}, fetchUrlOverride) {
       range.setEnd(node, end);
       const pageRect = page.getBoundingClientRect();
       let scale = 1;
-      const m = page.style.transform.match(/scale\(([^)]+)\)/);
-      if (m) scale = parseFloat(m[1]);
+      const m = (page.style.transform || '').match(/scale\(([^)]+)\)/);
+      if (m) scale = parseFloat(m[1]) || 1;
       for (const r of range.getClientRects()) {
+        const x = (r.left  - pageRect.left  - 8) / scale;
+        const y = (r.top   - pageRect.top   - 8) / scale;
+        const w =  r.width  / scale;
+        const h =  r.height / scale;
+        const yUL = (r.bottom - pageRect.top - 8) / scale - 3;
+        const eps = Math.max(1, Math.ceil(1.25 * (window.devicePixelRatio || 1))) / scale;
         if (hasBg) {
           const box = document.createElement('div');
           box.className = 'word-highlight';
           if (shift) box.classList.add('shift-left');
           if (pulseMode && job.isNew) box.classList.add('pulse');
-          const x = (r.left - pageRect.left - 8) / scale;
-          const y = (r.top  - pageRect.top  - 8) / scale;
           box.style.cssText = `${style};
             position:absolute;
             left:${x}px;
             top:${y}px;
-            width:${r.width  / scale}px;
-            height:${r.height / scale}px;
+            width:${w}px;
+            height:${h}px;
             pointer-events:none;
             mix-blend-mode:multiply;
             z-index:5`;
@@ -1227,25 +1230,20 @@ async function main(host = {}, fetchUrlOverride) {
           if (shift) ul.classList.add('shift-left');
           if (pulseMode && job.isNew) ul.classList.add('pulse');
           const ulColor = getUnderlineColorFromStyle(style);
-          const x = (r.left - pageRect.left - 8) / scale;
-          const y = (r.bottom - pageRect.top - 8 - 3) / scale; 
-          const w = r.width / scale;
-          const h = 4;
-          ul.style.left  = `${x}px`;
-          ul.style.top   = `${y}px`;
-          ul.style.width = `${w}px`;
-          ul.style.height= `${h}px`;
+          ul.style.left   = `${x}px`;
+          ul.style.top    = `${yUL}px`;
+          ul.style.width  = `${w}px`;
+          ul.style.height = `4px`;
           ul.style.backgroundImage = makeWavyDataURI(ulColor, 2, 6);
           page.appendChild(ul);
         }
         if (!hasBg && !hasUL && job.isText) {
-          const pad = 1.0;
           const mask = document.createElement('div');
           mask.className = 'word-mask';
-          mask.style.left   = `${x - pad/scale}px`;
-          mask.style.top    = `${y - pad/scale}px`;
-          mask.style.width  = `${w + (2*pad/scale)}px`;
-          mask.style.height = `${h + (2*pad/scale)}px`;
+          mask.style.left   = `${x - eps}px`;
+          mask.style.top    = `${y - eps}px`;
+          mask.style.width  = `${w + 2 * eps}px`;
+          mask.style.height = `${h + 2 * eps}px`;
           page.appendChild(mask);
         }
       }
