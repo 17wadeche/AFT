@@ -235,6 +235,39 @@ customRules = customRules
   .map(normalizeRuleFromStorage)
   .filter(Boolean);
 async function main(host = {}, fetchUrlOverride) {
+  let wordsDetectable = null;
+  let _checkingWords = null;
+  function hasNonEmptyTextSpan() {
+    const span = container?.querySelector('.textLayer span');
+    return !!(span && (span.textContent || '').trim());
+  }
+  async function checkWordsDetectable(force = false) {
+    if (!force && (wordsDetectable !== null || _checkingWords)) return wordsDetectable;
+    _checkingWords = (async () => {
+      if (hasNonEmptyTextSpan()) {
+        wordsDetectable = true;
+        return true;
+      }
+      try {
+        for (let n = 1; n <= pdfDoc.numPages; n++) {
+          const t = await getPageText(n);       
+          if (/\p{L}|\p{N}/u.test(t)) {          
+            wordsDetectable = true;
+            return true;
+          }
+        }
+      } catch { /* ignore */ }
+      wordsDetectable = false;
+      return false;
+    })();
+    try {
+      await _checkingWords;
+    } finally {
+      _checkingWords = null;
+      updateNoStylesBanner();
+    }
+    return wordsDetectable;
+  }
   const { viewerEl = null, embedEl = null } = host;
   function getPageScale(pageEl) {
     let scale = 1;
@@ -469,7 +502,6 @@ async function main(host = {}, fetchUrlOverride) {
       const to = setTimeout(finish, timeout); 
     });
   }
-  
   async function jumpTo({ pageNumber, phrase }) {
     if (!pageNumber && phrase) {
       pageNumber = await findPageNumberByPhrase(phrase);
@@ -507,16 +539,23 @@ async function main(host = {}, fetchUrlOverride) {
     const anyStyling =
       container?.querySelector('.word-highlight, .word-underline, .styled-word');
     if (!anyStyling) {
+      const message = (wordsDetectable === false)
+        ? 'This PDF may not be compatible.'
+        : 'No stylings found.';
+
       if (!noStylesBannerEl) {
         noStylesBannerEl = document.createElement('div');
         noStylesBannerEl.id = 'aftNoStylesBanner';
-        noStylesBannerEl.textContent = 'No stylings found. This PDF may not be compatible.';
         noStylesBannerEl.style.cssText = `
           position:fixed; top:0; left:0; right:0; padding:8px 12px;
           background:#f00; color:#000; text-align:center;
           font:bold 14px system-ui, sans-serif; z-index:${AFT_UI_Z + 1};
         `;
         document.body.appendChild(noStylesBannerEl);
+      }
+      noStylesBannerEl.textContent = message;
+      if (wordsDetectable === null) {
+        checkWordsDetectable();
       }
     } else {
       noStylesBannerEl?.remove();
@@ -1677,6 +1716,9 @@ async function main(host = {}, fetchUrlOverride) {
   eventBus.on('pagesloaded',        () => loader.remove());
   eventBus.on('pagesinit',          () => loader.remove());
   eventBus.on('documentloadfailed', () => loader.remove());
+  eventBus.on('pagesinit',          () => { checkWordsDetectable(); });
+  eventBus.on('textlayerrendered',  () => { checkWordsDetectable(); });
+  eventBus.on('pagesloaded',        () => { checkWordsDetectable(); });
   const fix = document.createElement('style');
   fix.textContent = `
     .textLayer span {
