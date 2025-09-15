@@ -1294,7 +1294,7 @@ async function main(host = {}, fetchUrlOverride) {
           const ul = document.createElement('div');
           ul.className = 'word-underline';
           ul.style.left = `${x}px`;
-          ul.style.top  = `${y + h - 3}px`;   // 3px wave height looks good
+          ul.style.top  = `${y + h - 3}px`;
           ul.style.width = `${w}px`;
           ul.style.height = `3px`;
           ul.style.backgroundImage = makeWavyDataURI(clr, 2, 6);
@@ -1302,17 +1302,38 @@ async function main(host = {}, fetchUrlOverride) {
         }
         continue;
       }
-      const clr = hasBg(job.style) ? bgColorOf(job.style) : textColorOf(job.style);
-      for (const r of rects) {
-        const { x, y, w, h } = toLayerLocal(pageEl, r);
-        const box = document.createElement('div');
-        box.className = 'word-highlight';
-        box.style.left = `${x}px`;
-        box.style.top  = `${y}px`;
-        box.style.width  = `${w}px`;
-        box.style.height = `${h}px`;
-        box.style.background = clr;
-        bg.appendChild(box);
+      if (hasBg(job.style)) {
+        const clr = bgColorOf(job.style);
+        for (const r of rects) {
+          const { x, y, w, h } = toLayerLocal(pageEl, r);
+          const box = document.createElement('div');
+          box.className = 'word-highlight';
+          box.style.left = `${x}px`;
+          box.style.top  = `${y}px`;
+          box.style.width  = `${w}px`;
+          box.style.height = `${h}px`;
+          box.style.background = clr;
+          bg.appendChild(box);
+        }
+        continue;
+      }
+      if (hasColor(job.style)) {
+        const clr = textColorOf(job.style);
+        const wrapColorRange = (node, start, end) => {
+          const before = start ? node.splitText(start) : node;
+          const after  = before.splitText(end - start);
+          const wrap   = document.createElement('span');
+          wrap.className = 'styled-word styled-word--color';
+          wrap.style.cssText =
+            `color:${clr} !important;` +
+            `-webkit-text-fill-color:${clr} !important;` +
+            `text-shadow:none !important;` +
+            `mix-blend-mode:normal !important;`;
+          before.parentNode.replaceChild(wrap, before);
+          wrap.appendChild(before);
+        };
+        wrapColorRange(job.node, job.start, job.end);
+        continue;
       }
     }
   }
@@ -1745,6 +1766,10 @@ async function main(host = {}, fetchUrlOverride) {
       pointer-events: none;
       mix-blend-mode: multiply;  
       opacity:.35;
+    }
+    .styled-word--color { 
+      display: contents !important;
+      mix-blend-mode: normal !important;
     }
   `;
   fix.textContent += `
