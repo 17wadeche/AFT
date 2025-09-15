@@ -1278,10 +1278,11 @@ async function main(host = {}, fetchUrlOverride) {
       if (isUnderline) wrap.classList.add('aft-ul');
       if (shift) wrap.classList.add('shift-left');
       if (pulseMode && job.isNew) wrap.classList.add('pulse');
-      const needsForce =
-        !/color\s*:/.test(style) &&
-        !isUnderline; 
-      wrap.style.cssText = style + (needsForce ? FORCE_TEXT_VISIBLE : '');
+      const PAINT_VISIBLE_FIX =
+        ';position:relative;z-index:3;' +
+        '-webkit-text-fill-color:currentColor !important;' +
+        'text-shadow:none !important;mix-blend-mode:normal;';
+      wrap.style.cssText = style + PAINT_VISIBLE_FIX;
       wrap.appendChild(target.cloneNode(true));
       target.parentNode.replaceChild(wrap, target);
     }
@@ -1681,16 +1682,24 @@ async function main(host = {}, fetchUrlOverride) {
   eventBus.on('documentloadfailed', () => loader.remove());
   const fix = document.createElement('style');
   fix.textContent = `
-    .textLayer span { mix-blend-mode:normal; }
+    .textLayer { opacity: 1 !important; z-index: 2 !important; }
+    .textLayer span {
+      mix-blend-mode: normal;
+      color: inherit !important;
+      -webkit-text-fill-color: inherit !important;
+    }
     .styled-word{
-      mix-blend-mode:normal !important;
-      z-index:2;                 /* above the mask */
+      position: relative;
+      z-index: 3;                                   /* above .word-mask */
+      mix-blend-mode: normal !important;
+      -webkit-text-fill-color: currentColor !important;
+      text-shadow: none !important;
     }
-    .word-highlight {
-      position: absolute;
-      pointer-events: none;
-      mix-blend-mode: multiply;  
-    }
+    .word-highlight { position: absolute; pointer-events:none; mix-blend-mode:multiply; }
+    .word-underline { position:absolute; pointer-events:none; z-index:6; height:4px; background-repeat:repeat-x; background-position:left bottom; background-size:auto 100%; mix-blend-mode:multiply; }
+    .word-mask { position:absolute; pointer-events:none; background:#fff; mix-blend-mode:normal !important; z-index:1; }
+    .page { box-shadow: 0 0 6px rgba(0,0,0,.12); margin:0 auto 24px; }
+    .page::after { content:""; position:absolute; left:0; right:0; bottom:-16px; border-bottom:1px dashed #888; opacity:.7; pointer-events:none; }
   `;
   fix.textContent += `
     @keyframes pulseHighlight {
