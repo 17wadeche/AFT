@@ -217,9 +217,6 @@ async function main(host = {}, fetchUrlOverride) {
     const span = container?.querySelector('.textLayer span');
     return !!(span && (span.textContent || '').trim());
   }
-  function anyTextColorRule() {
-    return styleWordsToUse.some(r => isTextStyle(r));
-  }
   async function checkWordsDetectable(force = false) {
     if (!force && (wordsDetectable !== null || _checkingWords)) return wordsDetectable;
     _checkingWords = (async () => {
@@ -821,7 +818,6 @@ async function main(host = {}, fetchUrlOverride) {
         isNew: newWordsSet.has(normWord(w)),
       }));
     });
-    if (container) container.classList.toggle('aft-color-mode', anyTextColorRule());
   }
   updateStyleWords();
   const buSelect = document.createElement('select');
@@ -1354,7 +1350,6 @@ async function main(host = {}, fetchUrlOverride) {
   }
   function renderAllHighlights() {
     if (!container) return;
-    container.classList.toggle('aft-color-mode', anyTextColorRule());
     clearHighlights(container);
     container.querySelectorAll('.page').forEach(page => {
       page.style.position = 'relative';
@@ -1775,14 +1770,6 @@ async function main(host = {}, fetchUrlOverride) {
     }
   `;
   fix.textContent += `
-    .aft-color-mode .textLayer span {
-      color: inherit !important;
-      -webkit-text-fill-color: currentColor !important;
-      -webkit-text-stroke: 0 currentColor !important;
-      text-shadow: none !important;
-      filter: none !important;
-      opacity: 1 !important;
-    }
     .word-underline {
       position:absolute;
       pointer-events:none;
