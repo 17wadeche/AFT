@@ -1682,68 +1682,44 @@ async function main(host = {}, fetchUrlOverride) {
   eventBus.on('documentloadfailed', () => loader.remove());
   const fix = document.createElement('style');
   fix.textContent = `
+    /* Let PDF.js textLayer exist (for ranges/rects) but keep it invisible
+      so we don't double-paint over the canvas text. */
     .textLayer { opacity: 1 !important; z-index: 2 !important; }
     .textLayer span {
-      mix-blend-mode: normal;
-      color: inherit !important;
-      -webkit-text-fill-color: inherit !important;
+      color: transparent !important;
+      -webkit-text-fill-color: transparent !important;
+      mix-blend-mode: normal !important;
     }
+
+    /* Only the wrapped styled words should actually render visible text */
     .styled-word{
       position: relative;
-      z-index: 3;                                   /* above .word-mask */
-      mix-blend-mode: normal !important;
+      z-index: 3; /* above .word-mask */
+      color: inherit !important;
       -webkit-text-fill-color: currentColor !important;
       text-shadow: none !important;
+      mix-blend-mode: normal !important;
     }
-    .word-highlight { position: absolute; pointer-events:none; mix-blend-mode:multiply; }
-    .word-underline { position:absolute; pointer-events:none; z-index:6; height:4px; background-repeat:repeat-x; background-position:left bottom; background-size:auto 100%; mix-blend-mode:multiply; }
+
+    /* Overlays */
+    .word-highlight { position: absolute; pointer-events:none; mix-blend-mode:multiply; z-index:5; }
+    .word-underline { position:absolute; pointer-events:none; z-index:6; height:4px;
+                      background-repeat:repeat-x; background-position:left bottom;
+                      background-size:auto 100%; mix-blend-mode:multiply; }
     .word-mask { position:absolute; pointer-events:none; background:#fff; mix-blend-mode:normal !important; z-index:1; }
+
+    /* Subtle page chrome */
     .page { box-shadow: 0 0 6px rgba(0,0,0,.12); margin:0 auto 24px; }
     .page::after { content:""; position:absolute; left:0; right:0; bottom:-16px; border-bottom:1px dashed #888; opacity:.7; pointer-events:none; }
-  `;
-  fix.textContent += `
+
+    /* Pulse (unchanged) */
     @keyframes pulseHighlight {
-      0%   { filter: brightness(2.5) saturate(2); transform: scale(1);   }
-      50%  { filter: brightness(3) saturate(3); transform: scale(1.08); }
-      100% { filter: brightness(1.0) saturate(1.0); transform: scale(1);   }
+      0% { filter: brightness(2.5) saturate(2); transform: scale(1); }
+      50% { filter: brightness(3) saturate(3); transform: scale(1.08); }
+      100% { filter: brightness(1) saturate(1); transform: scale(1); }
     }
-    .word-highlight.pulse {
-      animation: pulseHighlight 0.9s ease-out 0s 2 alternate;
-      mix-blend-mode: normal !important;
-      z-index: 10 !important;
-      opacity: 1 !important;
-    }
-    .styled-word.pulse {
-      animation: pulseHighlight 0.9s ease-out 0s 2 alternate;
-    }
-    .word-underline {
-      position:absolute;
-      pointer-events:none;
-      z-index:6;
-      height:4px;
-      background-repeat:repeat-x;
-      background-position:left bottom;
-      background-size:auto 100%;
-      mix-blend-mode:multiply;
-    }
-    .word-mask {
-    position: absolute;
-    pointer-events: none;
-    background: #fff;              /* the knockout */
-    mix-blend-mode: normal !important;
-    z-index: 1;                    /* under textLayer (z≈2), over canvas (z≈0) */
-  }
-    .page { box-shadow: 0 0 6px rgba(0,0,0,.12); margin:0 auto 24px; }
-    .page::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: -16px;
-      border-bottom: 1px dashed #888;
-      opacity: .7;
-      pointer-events: none;
-    }
+    .word-highlight.pulse { animation: pulseHighlight .9s ease-out 0s 2 alternate; mix-blend-mode:normal!important; z-index:10!important; opacity:1!important; }
+    .styled-word.pulse   { animation: pulseHighlight .9s ease-out 0s 2 alternate; }
   `;
   document.head.appendChild(fix);
   linkService.setViewer(pdfViewer);
