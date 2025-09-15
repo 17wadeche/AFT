@@ -1179,7 +1179,8 @@ async function main(host = {}, fetchUrlOverride) {
               end:   m.index + m[0].length,
               style: rule.style,
               shift,
-              isNew: rxObj.isNew === true
+              isNew: rxObj.isNew === true,
+              isText: isTextStyle(rule)
             });
           }
         }
@@ -1235,6 +1236,16 @@ async function main(host = {}, fetchUrlOverride) {
           ul.style.height= `${h}px`;
           ul.style.backgroundImage = makeWavyDataURI(ulColor, 2, 6);
           page.appendChild(ul);
+        }
+        if (!hasBg && !hasUL && job.isText) {
+          const pad = 1.0;
+          const mask = document.createElement('div');
+          mask.className = 'word-mask';
+          mask.style.left   = `${x - pad/scale}px`;
+          mask.style.top    = `${y - pad/scale}px`;
+          mask.style.width  = `${w + (2*pad/scale)}px`;
+          mask.style.height = `${h + (2*pad/scale)}px`;
+          page.appendChild(mask);
         }
       }
       range.detach();
@@ -1712,6 +1723,13 @@ async function main(host = {}, fetchUrlOverride) {
       background-size:auto 100%;
       mix-blend-mode:multiply;
     }
+    .word-mask {
+    position: absolute;
+    pointer-events: none;
+    background: #fff;              /* the knockout */
+    mix-blend-mode: normal !important;
+    z-index: 1;                    /* under textLayer (z≈2), over canvas (z≈0) */
+  }
     .page { box-shadow: 0 0 6px rgba(0,0,0,.12); margin:0 auto 24px; }
     .page::after {
       content: "";
