@@ -1691,7 +1691,6 @@ async function main(host = {}, fetchUrlOverride) {
     .styled-word{
       position: relative;
       z-index: 3;
-      color: inherit !important;
       -webkit-text-fill-color: currentColor !important;
       text-shadow: none !important;
       mix-blend-mode: normal !important;
