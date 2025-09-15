@@ -1786,7 +1786,6 @@ async function main(host = {}, fetchUrlOverride) {
       letter-spacing: inherit !important;
       box-decoration-break: clone;
       -webkit-box-decoration-break: clone;
-      mix-blend-mode:multiply;
     }
     .word-highlight {
       position: absolute;
