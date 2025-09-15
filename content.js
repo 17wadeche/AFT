@@ -1686,7 +1686,6 @@ async function main(host = {}, fetchUrlOverride) {
     .textLayer span { mix-blend-mode:normal; }
     .styled-word{
       mix-blend-mode:normal !important;
-      position:relative;         /* create a stacking context */
       z-index:2;                 /* above the mask */
     }
     .word-highlight {
