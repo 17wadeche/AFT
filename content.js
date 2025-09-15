@@ -125,7 +125,7 @@ function makeRegex(word) {
   } else {
     pattern = esc(w) + '(?:s|ed)?';
   }
-  return new RegExp(`(?<![\\p{L}\\p{N}])(${pattern})`, 'giu');
+  return new RegExp(`(?<![\\p{L}\\p{N}])(${pattern})(?![\\p{L}\\p{N}])`, 'giu');
 }
 const FORCE_TEXT_VISIBLE = ';color:#000 !important;-webkit-text-fill-color:#000 !important;';
 const CSS_COLOR_KEYWORDS = [
@@ -211,8 +211,21 @@ customRules = customRules
   .map(normalizeRuleFromStorage)
   .filter(Boolean);
 async function main(host = {}, fetchUrlOverride) {
+  const dpr = window.devicePixelRatio || 1;
+  const px  = v => (Math.round(v * dpr) / dpr);
   let wordsDetectable = null;
   let _checkingWords = null;
+  function getTextLayer(pageEl) {
+    return pageEl.querySelector('.textLayer');
+  }
+  function ensureLayerContainers(pageEl) {
+    const layer = getTextLayer(pageEl);
+    let bg = layer.querySelector('.aft-bg');
+    let fg = layer.querySelector('.aft-fg');
+    if (!bg) { bg = document.createElement('div'); bg.className = 'aft-bg'; layer.prepend(bg); }
+    if (!fg) { fg = document.createElement('div'); fg.className = 'aft-fg'; layer.append(fg); }
+    return { bg, fg };
+  }
   function hasNonEmptyTextSpan() {
     const span = container?.querySelector('.textLayer span');
     return !!(span && (span.textContent || '').trim());
@@ -255,29 +268,29 @@ async function main(host = {}, fetchUrlOverride) {
     const tl = pageEl.querySelector('.textLayer');
     return (tl ? tl.getBoundingClientRect() : pageEl.getBoundingClientRect());
   }
-  function toPageLocal(pageEl, clientRect) {
-    const scale = getPageScale(pageEl);
-    const layerRect = getLayerRect(pageEl);
+  function toLayerLocal(pageEl, clientRect) {
+    const layer = getTextLayer(pageEl);
+    const layerRect = layer.getBoundingClientRect();
     return {
-      x:      (clientRect.left   - layerRect.left)   / scale,
-      y:      (clientRect.top    - layerRect.top)    / scale,
-      w:       clientRect.width                      / scale,
-      h:       clientRect.height                     / scale,
-      bottomY:(clientRect.bottom - layerRect.top)    / scale,
-      scale
+      x:  clientRect.left   - layerRect.left,
+      y:  clientRect.top    - layerRect.top,
+      w:  clientRect.width,
+      h:  clientRect.height,
+      bottomY: clientRect.bottom - layerRect.top
     };
   }
   function flashRectsOnPage(pageEl, rects) {
+    const { bg } = ensureLayerContainers(pageEl);
     const overlays = [];
     rects.forEach(r => {
       const box = document.createElement('div');
       box.className = 'aft-ql-flash';
-      const { x, y, w, h } = toPageLocal(pageEl, r);
-      box.style.left   = `${x}px`;
-      box.style.top    = `${y}px`;
-      box.style.width  = `${w}px`;
-      box.style.height = `${h}px`;
-      pageEl.appendChild(box);
+      const { x, y, w, h } = toLayerLocal(pageEl, r);
+      box.style.left   = px(x) + 'px';
+      box.style.top    = px(y) + 'px';
+      box.style.width  = px(w) + 'px';
+      box.style.height = px(h) + 'px';
+      bg.appendChild(box);
       overlays.push(box);
     });
     setTimeout(() => overlays.forEach(o => o.remove()), 1600);
@@ -1238,7 +1251,7 @@ async function main(host = {}, fetchUrlOverride) {
       if (m) scale = parseFloat(m[1]);
       for (const r of range.getClientRects()) {
         const layerRect = getLayerRect(page);
-        const { x, y, w, h, bottomY } = toPageLocal(page, r);
+        const { x, y, w, h, bottomY } = toLayerLocal(page, r);
         if (hasBg) {
           const box = document.createElement('div');
           box.className = 'word-highlight';
@@ -1682,6 +1695,7 @@ async function main(host = {}, fetchUrlOverride) {
     }
     return '';
   }
+
   function getNameFromUrl(u = '') {
     try {
       const url = new URL(u);
