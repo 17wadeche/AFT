@@ -515,20 +515,22 @@ async function main(host = {}, fetchUrlOverride) {
     const anyStyling =
       container?.querySelector('.word-highlight, .word-underline, .styled-word');
     if (!anyStyling) {
-      const message = (wordsDetectable === false)
+      const isIncompatible = (wordsDetectable === false);
+      const message = isIncompatible
         ? 'This PDF may not be compatible.'
         : 'No stylings found.';
-
       if (!noStylesBannerEl) {
         noStylesBannerEl = document.createElement('div');
         noStylesBannerEl.id = 'aftNoStylesBanner';
         noStylesBannerEl.style.cssText = `
           position:fixed; top:0; left:0; right:0; padding:8px 12px;
-          background:#f00; color:#000; text-align:center;
-          font:bold 14px system-ui, sans-serif; z-index:${AFT_UI_Z + 1};
+          color:#000; text-align:center; font:bold 14px system-ui, sans-serif;
+          z-index:${AFT_UI_Z + 1};
         `;
         document.body.appendChild(noStylesBannerEl);
       }
+      noStylesBannerEl.style.background = isIncompatible ? '#f44336' /* red */ : '#ffeb3b' /* yellow */;
+      noStylesBannerEl.style.border = '1px solid rgba(0,0,0,.2)';
       noStylesBannerEl.textContent = message;
       if (wordsDetectable === null) {
         checkWordsDetectable();
