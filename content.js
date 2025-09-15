@@ -129,7 +129,26 @@ function makeRegex(word) {
 }
 const FORCE_TEXT_VISIBLE = ';color:#000 !important;-webkit-text-fill-color:#000 !important;';
 const CSS_COLOR_KEYWORDS = [
-  'aliceblue','antiquewhite','aqua','aquamarine','azure','beige','bisque','blanchedalmond','blue','blueviolet','brown','burlywood','cadetblue','chartreuse', 'chocolate','coral','cornflowerblue','cornsilk','crimson','cyan','darkblue','darkcyan', 'darkgoldenrod','darkgray','darkgreen','darkgrey','darkkhaki','darkmagenta','darkolivegreen', 'darkorange','darkorchid','darkred','darksalmon','darkseagreen','darkslateblue','darkslategray','darkslategrey','darkturquoise','darkviolet','deeppink','deepskyblue','dimgray','dimgrey', 'dodgerblue','firebrick','floralwhite','forestgreen','fuchsia','gainsboro','ghostwhite','gold', 'goldenrod','gray','green','greenyellow','grey','honeydew','hotpink','indianred','indigo','ivory','khaki','lavender','lavenderblush','lawngreen','lemonchiffon','lightblue','lightcoral', 'lightcyan','lightgoldenrodyellow','lightgray','lightgreen','lightgrey','lightpink','lightsalmon','lightseagreen','lightskyblue','lightslategray','lightslategrey','lightsteelblue','lightyellow', 'lime','limegreen','linen','magenta','maroon','mediumaquamarine','mediumblue','mediumorchid','mediumpurple','mediumseagreen','mediumslateblue','mediumspringgreen','mediumturquoise','mediumvioletred','midnightblue','mintcream','mistyrose','moccasin','navajowhite','navy','oldlace','olive','olivedrab','orange','orangered','orchid','palegoldenrod','palegreen','paleturquoise','palevioletred','papayawhip','peachpuff','peru','pink','plum','powderblue', 'purple','rebeccapurple','red','rosybrown','royalblue','saddlebrown','salmon','sandybrown','seagreen','seashell','sienna','silver','skyblue','slateblue','slategray','slategrey','springgreen','steelblue','tan','teal','thistle','tomato','turquoise','violet','wheat','yellow','yellowgreen'
+  'aliceblue','antiquewhite','aqua','aquamarine','azure','beige','bisque','black',
+  'blanchedalmond','blue','blueviolet','brown','burlywood','cadetblue','chartreuse',
+  'chocolate','coral','cornflowerblue','cornsilk','crimson','cyan','darkblue','darkcyan',
+  'darkgoldenrod','darkgray','darkgreen','darkgrey','darkkhaki','darkmagenta','darkolivegreen',
+  'darkorange','darkorchid','darkred','darksalmon','darkseagreen','darkslateblue','darkslategray',
+  'darkslategrey','darkturquoise','darkviolet','deeppink','deepskyblue','dimgray','dimgrey',
+  'dodgerblue','firebrick','floralwhite','forestgreen','fuchsia','gainsboro','ghostwhite','gold',
+  'goldenrod','gray','green','greenyellow','grey','honeydew','hotpink','indianred','indigo','ivory',
+  'khaki','lavender','lavenderblush','lawngreen','lemonchiffon','lightblue','lightcoral',
+  'lightcyan','lightgoldenrodyellow','lightgray','lightgreen','lightgrey','lightpink','lightsalmon',
+  'lightseagreen','lightskyblue','lightslategray','lightslategrey','lightsteelblue','lightyellow',
+  'lime','limegreen','linen','magenta','maroon','mediumaquamarine','mediumblue','mediumorchid',
+  'mediumpurple','mediumseagreen','mediumslateblue','mediumspringgreen','mediumturquoise',
+  'mediumvioletred','midnightblue','mintcream','mistyrose','moccasin','navajowhite','navy',
+  'oldlace','olive','olivedrab','orange','orangered','orchid','palegoldenrod','palegreen',
+  'paleturquoise','palevioletred','papayawhip','peachpuff','peru','pink','plum','powderblue',
+  'purple','rebeccapurple','red','rosybrown','royalblue','saddlebrown','salmon','sandybrown',
+  'seagreen','seashell','sienna','silver','skyblue','slateblue','slategray','slategrey','snow',
+  'springgreen','steelblue','tan','teal','thistle','tomato','turquoise','violet','wheat','white',
+  'whitesmoke','yellow','yellowgreen'
 ];
 function parseStyleToFields(styleStr) {
   const s = styleStr.toLowerCase();
@@ -226,66 +245,26 @@ async function main(host = {}, fetchUrlOverride) {
     return wordsDetectable;
   }
   const { viewerEl = null, embedEl = null } = host;
-  function getPageScale(pageEl, pageNumber) {
-    try {
-      const pv = pdfViewer?._pages?.[pageNumber - 1] ||
-                ([...(pdfViewer?._pages || [])].find(p => p?.div === pageEl));
-      const s = pv?.viewport?.scale ?? pv?.scale;
-      if (s && isFinite(s)) return s;
-    } catch {}
-    const tr = getComputedStyle(pageEl).transform || pageEl.style.transform || '';
-    let m = tr.match(/matrix3d\(([^)]+)\)/i);
-    if (m) {
-      const a = parseFloat(m[1].split(',')[0]);
-      if (isFinite(a) && a > 0) return a;
-    }
-    m = tr.match(/matrix\(([^)]+)\)/i);
-    if (m) {
-      const a = parseFloat(m[1].split(',')[0]);
-      if (isFinite(a) && a > 0) return a;
-    }
-    m = tr.match(/scale\(([^)]+)\)/i);
-    if (m) {
-      const a = parseFloat(m[1]);
-      if (isFinite(a) && a > 0) return a;
-    }
-    return 1;
-  }
-  function getPageNumberForDiv(pageEl) {
-    return (
-      +pageEl.getAttribute('data-page-number') ||
-      (pdfViewer?._pages?.findIndex(p => p?.div === pageEl) + 1) ||
-      1
-    );
-  }
-  function getLayerRect(pageEl) {
-    const tl = pageEl.querySelector('.textLayer');
-    return (tl ? tl.getBoundingClientRect() : pageEl.getBoundingClientRect());
-  }
-  function toPageLocal(pageEl, clientRect, pageNumber) {
-    const scale = getPageScale(pageEl, pageNumber);
-    const layerRect = getLayerRect(pageEl);
-    return {
-      x: (clientRect.left - layerRect.left) / scale,
-      y: (clientRect.top  - layerRect.top)  / scale,
-      w:  clientRect.width                  / scale,
-      h:  clientRect.height                 / scale,
-      bottomY: (clientRect.bottom - layerRect.top) / scale,
-      scale
-    };
+  function getPageScale(pageEl) {
+    let scale = 1;
+    const m = pageEl?.style?.transform?.match(/scale\(([^)]+)\)/);
+    if (m) scale = parseFloat(m[1]) || 1;
+    return scale;
   }
   function flashRectsOnPage(pageEl, rects) {
-    const { bg } = ensureLayerContainers(pageEl);
+    const pageRect = pageEl.getBoundingClientRect();
+    const scale = getPageScale(pageEl);
     const overlays = [];
     rects.forEach(r => {
       const box = document.createElement('div');
       box.className = 'aft-ql-flash';
-      const { x, y, w, h } = toLayerLocal(pageEl, r);
+      const x = (r.left - pageRect.left - 8) / scale;
+      const y = (r.top  - pageRect.top  - 8) / scale;
       box.style.left   = `${x}px`;
       box.style.top    = `${y}px`;
-      box.style.width  = `${w}px`;
-      box.style.height = `${h}px`;
-      bg.appendChild(box);
+      box.style.width  = `${r.width / scale}px`;
+      box.style.height = `${r.height / scale}px`;
+      pageEl.appendChild(box);
       overlays.push(box);
     });
     setTimeout(() => overlays.forEach(o => o.remove()), 1600);
@@ -351,8 +330,7 @@ async function main(host = {}, fetchUrlOverride) {
   function flashFirstSpanMatchOnPage(pageEl, phrase) {
     if (!phrase) return false;
     const pageRect = pageEl.getBoundingClientRect();
-    const pageNumber = getPageNumberForDiv(pageEl);
-    const scale = getPageScale(pageEl, pageNumber);
+    const scale = getPageScale(pageEl);
     const isNonWord = s => /^[^\p{L}\p{N}]+$/u.test(s || "");
     const tokenAlts = t => (t === "and" ? ["and", "&"] : [t]);
     const toLC = s => (s || "").toLowerCase();
@@ -363,10 +341,9 @@ async function main(host = {}, fetchUrlOverride) {
       const rects = Array.from(rng.getClientRects()).filter(r => r.width && r.height);
       try { rng.detach?.(); } catch {}
       if (rects.length) {
-        const layerRect = getTextLayer(pageEl).getBoundingClientRect();
-        const yLocal = (rects[0].top - layerRect.top) / scale;
+        const yLocal = (rects[0].top - pageRect.top - 8) / scale;
         const target = pageEl.offsetTop + Math.max(0, yLocal - 60);
-        container.scrollTo({ top: target, behavior: 'smooth' });
+        container.scrollTo({ top: target, behavior: "smooth" });
         flashRectsOnPage(pageEl, rects);
         return true;
       }
@@ -419,10 +396,9 @@ async function main(host = {}, fetchUrlOverride) {
           try { r.detach?.(); } catch {}
         }
         if (rects.length) {
-          const layerRect = getTextLayer(pageEl).getBoundingClientRect();
-          const yLocal = (rects[0].top - layerRect.top) / scale;
+          const yLocal = (rects[0].top - pageRect.top - 8) / scale;
           const target = pageEl.offsetTop + Math.max(0, yLocal - 60);
-          container.scrollTo({ top: target, behavior: 'smooth' });
+          container.scrollTo({ top: target, behavior: "smooth" });
           flashRectsOnPage(pageEl, rects);
           return true;
         }
@@ -463,37 +439,26 @@ async function main(host = {}, fetchUrlOverride) {
     }
     return null;
   }
-  function getTextLayer(pageEl) {
-    return pageEl.querySelector('.textLayer');
+  function ensureTextLayerRendered(pageNumber) {
+    const pv = pdfViewer._pages?.[pageNumber - 1];
+    if (!pv) return Promise.resolve();
+    if (pv.textLayer && pv.textLayer.renderingDone) return Promise.resolve();
+    return new Promise(resolve => {
+      let done = false;
+      const finish = () => { if (done) return; done = true; cleanup(); resolve(); };
+      const onTL  = ({ pageNumber: n }) => { if (n === pageNumber) finish(); };
+      const onPR  = ({ pageNumber: n }) => { if (n === pageNumber) finish(); };
+      const cleanup = () => {
+        eventBus.off('textlayerrendered', onTL);
+        eventBus.off('pagerendered', onPR);
+        clearTimeout(to);
+      };
+      eventBus.on('textlayerrendered', onTL);
+      eventBus.on('pagerendered', onPR);
+      const to = setTimeout(finish, 1200);
+    });
   }
-  function toLayerLocal(pageEl, clientRect) {
-    const layer = getTextLayer(pageEl);
-    const layerRect = layer.getBoundingClientRect();
-    return {
-      x: clientRect.left   - layerRect.left,
-      y: clientRect.top    - layerRect.top,
-      w: clientRect.width,
-      h: clientRect.height,
-      bottomY: clientRect.bottom - layerRect.top
-    };
-  }
-  function ensureLayerContainers(pageEl) {
-    const layer = getTextLayer(pageEl);
-    let bg = layer.querySelector('.aft-bg');
-    let fg = layer.querySelector('.aft-fg');
-    if (!bg) {
-      bg = document.createElement('div');
-      bg.className = 'aft-bg';
-      layer.prepend(bg);                     // behind spans by DOM order
-    }
-    if (!fg) {
-      fg = document.createElement('div');
-      fg.className = 'aft-fg';
-      layer.append(fg);                      // above spans for underlines
-    }
-    return { bg, fg };
-  }
-    function waitForPageReady(pageNumber, timeout = 1000) {
+  function waitForPageReady(pageNumber, timeout = 1000) {
     return new Promise(resolve => {
       let done = false;
       const finish = () => {
@@ -699,7 +664,7 @@ async function main(host = {}, fetchUrlOverride) {
       pointer-events: none;
       background: rgba(255, 235, 59, .65); /* warm yellow */
       outline: 1px solid rgba(0,0,0,.12);
-      z-index: 0;
+      z-index: 9999;
       animation: aftQlFlash 1.4s ease-out 1 forwards;
       mix-blend-mode: multiply;
     }
@@ -799,8 +764,9 @@ async function main(host = {}, fetchUrlOverride) {
         isNew: newWordsSet.has(normWord(w)),
       }));
     });
+    pulseMode = newWordsSet.size > 0;
   }
-  updateStyleWords({});
+  updateStyleWords({suppressPulse:true});
   const buSelect = document.createElement('select');
   buSelect.style.marginLeft = '-200px';
   buSelect.style.width = 'calc(100% + 23px)';
@@ -1238,7 +1204,6 @@ async function main(host = {}, fetchUrlOverride) {
         }
       }
     }
-    const { bg, fg } = ensureLayerContainers(page);
     const jobs = Object.values(jobsByKey).flat();
     for (const job of jobs) {
       const { style } = job;
@@ -1255,34 +1220,40 @@ async function main(host = {}, fetchUrlOverride) {
       const m = page.style.transform.match(/scale\(([^)]+)\)/);
       if (m) scale = parseFloat(m[1]);
       for (const r of range.getClientRects()) {
-        const { x, y, w, h, bottomY } = toLayerLocal(page, r);
         if (hasBg) {
           const box = document.createElement('div');
           box.className = 'word-highlight';
           if (shift) box.classList.add('shift-left');
+          if (pulseMode && job.isNew) box.classList.add('pulse');
+          const x = (r.left - pageRect.left - 8) / scale;
+          const y = (r.top  - pageRect.top  - 8) / scale;
           box.style.cssText = `${style};
             position:absolute;
             left:${x}px;
             top:${y}px;
-            width:${w}px;
-            height:${h}px;
+            width:${r.width  / scale}px;
+            height:${r.height / scale}px;
             pointer-events:none;
-            mix-blend-mode:multiply`;
-          bg.appendChild(box);
+            mix-blend-mode:multiply;
+            z-index:5`;
+          page.appendChild(box);
         }
         if (hasUL) {
           const ul = document.createElement('div');
           ul.className = 'word-underline';
           if (shift) ul.classList.add('shift-left');
+          if (pulseMode && job.isNew) ul.classList.add('pulse');
           const ulColor = getUnderlineColorFromStyle(style);
-          const underlineHeight = 4;
+          const x = (r.left - pageRect.left - 8) / scale;
+          const y = (r.bottom - pageRect.top - 8 - 3) / scale; 
+          const w = r.width / scale;
+          const h = 4;
           ul.style.left  = `${x}px`;
-          ul.style.top   = `${bottomY - underlineHeight}px`;
+          ul.style.top   = `${y}px`;
           ul.style.width = `${w}px`;
-          ul.style.height= `${underlineHeight}px`;
+          ul.style.height= `${h}px`;
           ul.style.backgroundImage = makeWavyDataURI(ulColor, 2, 6);
-          const { fg } = ensureLayerContainers(page);
-          fg.appendChild(ul);
+          page.appendChild(ul);
         }
       }
       range.detach();
@@ -1315,6 +1286,7 @@ async function main(host = {}, fetchUrlOverride) {
       const isUnderline = /text-decoration-line\s*:\s*underline/i.test(style);
       if (isUnderline) wrap.classList.add('aft-ul');
       if (shift) wrap.classList.add('shift-left');
+      if (pulseMode && job.isNew) wrap.classList.add('pulse');
       const needsForce =
         !/color\s*:/.test(style) &&
         !isUnderline; 
@@ -1352,6 +1324,7 @@ async function main(host = {}, fetchUrlOverride) {
         highlightSpan(span, styleWordsToUse, page);
       });
     });
+    if (pulseMode) setTimeout(() => { pulseMode = false; }, 1000);
     updateNoStylesBanner();
   }
   function refreshAll() {
@@ -1435,7 +1408,7 @@ async function main(host = {}, fetchUrlOverride) {
       height: heightPx + 'px',
     });
     Object.assign(container.style, {
-      position: 'absolute',
+      position: 'absolute',      // <-- important
       inset: '0',
       overflow: 'auto',
       background: '#000',
@@ -1726,23 +1699,11 @@ async function main(host = {}, fetchUrlOverride) {
   eventBus.on('pagesloaded',        () => { checkWordsDetectable(); });
   const fix = document.createElement('style');
   fix.textContent = `
-    .textLayer{position:relative; isolation:isolate;}
     .textLayer span {
       pointer-events:auto !important;
       opacity:1 !important;
+      mix-blend-mode:multiply;
     }
-    .textLayer .aft-bg,
-    .textLayer .aft-fg {
-      position:absolute;
-      left:0; top:0; right:0; bottom:0;
-      pointer-events:none;
-      position:absolute;                 /* pdf.js already does this; ensure it */
-      z-index:2;                         /* above bg */
-      color:#000 !important;             /* make spans the visible glyphs */
-      -webkit-text-fill-color:#000 !important;
-    }
-    .textLayer .aft-bg { z-index: 1; }   
-    .textLayer .aft-fg { z-index: 3; } 
     .styled-word { 
       display: contents !important;
       font:inherit;
@@ -1752,13 +1713,27 @@ async function main(host = {}, fetchUrlOverride) {
       position: absolute;
       pointer-events: none;
       mix-blend-mode: multiply;  
-      z-index:1;    
     }
   `;
   fix.textContent += `
+    @keyframes pulseHighlight {
+      0%   { filter: brightness(2.5) saturate(2); transform: scale(1);   }
+      50%  { filter: brightness(3) saturate(3); transform: scale(1.08); }
+      100% { filter: brightness(1.0) saturate(1.0); transform: scale(1);   }
+    }
+    .word-highlight.pulse {
+      animation: pulseHighlight 0.9s ease-out 0s 2 alternate;
+      mix-blend-mode: normal !important;
+      z-index: 10 !important;
+      opacity: 1 !important;
+    }
+    .styled-word.pulse {
+      animation: pulseHighlight 0.9s ease-out 0s 2 alternate;
+    }
     .word-underline {
       position:absolute;
       pointer-events:none;
+      z-index:6;
       height:4px;
       background-repeat:repeat-x;
       background-position:left bottom;
