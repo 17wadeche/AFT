@@ -503,12 +503,12 @@ async function main(host = {}, fetchUrlOverride) {
     if (!bg) {
       bg = document.createElement('div');
       bg.className = 'aft-bg';
-      layer.prepend(bg);
+      layer.prepend(bg);                     // behind spans by DOM order
     }
     if (!fg) {
       fg = document.createElement('div');
       fg.className = 'aft-fg';
-      layer.append(fg);
+      layer.append(fg);                      // above spans for underlines
     }
     return { bg, fg };
   }
@@ -1281,15 +1281,12 @@ async function main(host = {}, fetchUrlOverride) {
           box.className = 'word-highlight';
           if (shift) box.classList.add('shift-left');
           if (pulseMode && job.isNew) box.classList.add('pulse');
-          const inset = Math.min(1.5, h * 0.15);
-          const yInset = y + inset;
-          const hInset = Math.max(1, h - inset * 2);
           box.style.cssText = `${style};
             position:absolute;
             left:${x}px;
-            top:${yInset}px;
+            top:${y}px;
             width:${w}px;
-            height:${hInset}px;
+            height:${h}px;
             pointer-events:none;
             mix-blend-mode:multiply`;
           bg.appendChild(box);
@@ -1306,7 +1303,7 @@ async function main(host = {}, fetchUrlOverride) {
           ul.style.width = `${w}px`;
           ul.style.height= `${underlineHeight}px`;
           ul.style.backgroundImage = makeWavyDataURI(ulColor, 2, 6);
-          fg.appendChild(ul);
+          bg.appendChild(ul);
         }
       }
       range.detach();
@@ -1605,15 +1602,19 @@ async function main(host = {}, fetchUrlOverride) {
   const buLabel = document.createElement('label');
   buLabel.textContent = 'BU:';
   buLabel.style.fontWeight = 'bold';
+
   const ouLabel = document.createElement('label');
   ouLabel.textContent = 'OU:';
   ouLabel.style.fontWeight = 'bold';
+
   const buRow = document.createElement('div');
   buRow.className = 'aft-row';
   buRow.append(buLabel, buSelect);
+
   const ouRow = document.createElement('div');
   ouRow.className = 'aft-row';
   ouRow.append(ouLabel, ouSelect);
+
   hlBody.append(
     buRow,
     ouRow,
@@ -1689,8 +1690,8 @@ async function main(host = {}, fetchUrlOverride) {
   let data, fetchUrl, resp;
   try {
     fetchUrl = fetchUrlOverride ||
-          (embed && embed.getAttribute && embed.getAttribute('original-url')) ||
-          location.href;
+           (embed && embed.getAttribute && embed.getAttribute('original-url')) ||
+           location.href;
     resp = await fetch(fetchUrl, { credentials: 'include', cache: 'force-cache' });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     data = await resp.arrayBuffer();
@@ -1721,7 +1722,7 @@ async function main(host = {}, fetchUrlOverride) {
     try {
       const url = new URL(u);
       const qpName =
-        url.searchParams.get('filename') ||
+       url.searchParams.get('filename') ||
         url.searchParams.get('fileName') ||
         url.searchParams.get('name') ||
         url.searchParams.get('download');
@@ -1751,8 +1752,6 @@ async function main(host = {}, fetchUrlOverride) {
     .textLayer span {
       pointer-events:auto !important;
       opacity:1 !important;
-      position: relative;           /* ensure spans create their own stacking context */
-      z-index: 2;
     }
     .textLayer .aft-bg,
     .textLayer .aft-fg {
@@ -1760,7 +1759,8 @@ async function main(host = {}, fetchUrlOverride) {
       left:0; top:0; right:0; bottom:0;
       pointer-events:none;
     }
-    .textLayer .aft-bg { z-index: 1; }
+    .textLayer .aft-bg { z-index: 1; }     /* highlights behind text */
+    .textLayer span    { z-index: 2; }     /* the glyph spans */
     .textLayer .aft-fg { z-index: 3; } 
     .styled-word { 
       display: contents !important;
@@ -1771,8 +1771,6 @@ async function main(host = {}, fetchUrlOverride) {
       position: absolute;
       pointer-events: none;
       mix-blend-mode: multiply;  
-      opacity: .35;                 /* let canvas glyphs show through */
-      border-radius: 2px; 
     }
   `;
   fix.textContent += `
