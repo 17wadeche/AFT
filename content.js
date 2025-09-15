@@ -129,26 +129,7 @@ function makeRegex(word) {
 }
 const FORCE_TEXT_VISIBLE = ';color:#000 !important;-webkit-text-fill-color:#000 !important;';
 const CSS_COLOR_KEYWORDS = [
-  'aliceblue','antiquewhite','aqua','aquamarine','azure','beige','bisque','black',
-  'blanchedalmond','blue','blueviolet','brown','burlywood','cadetblue','chartreuse',
-  'chocolate','coral','cornflowerblue','cornsilk','crimson','cyan','darkblue','darkcyan',
-  'darkgoldenrod','darkgray','darkgreen','darkgrey','darkkhaki','darkmagenta','darkolivegreen',
-  'darkorange','darkorchid','darkred','darksalmon','darkseagreen','darkslateblue','darkslategray',
-  'darkslategrey','darkturquoise','darkviolet','deeppink','deepskyblue','dimgray','dimgrey',
-  'dodgerblue','firebrick','floralwhite','forestgreen','fuchsia','gainsboro','ghostwhite','gold',
-  'goldenrod','gray','green','greenyellow','grey','honeydew','hotpink','indianred','indigo','ivory',
-  'khaki','lavender','lavenderblush','lawngreen','lemonchiffon','lightblue','lightcoral',
-  'lightcyan','lightgoldenrodyellow','lightgray','lightgreen','lightgrey','lightpink','lightsalmon',
-  'lightseagreen','lightskyblue','lightslategray','lightslategrey','lightsteelblue','lightyellow',
-  'lime','limegreen','linen','magenta','maroon','mediumaquamarine','mediumblue','mediumorchid',
-  'mediumpurple','mediumseagreen','mediumslateblue','mediumspringgreen','mediumturquoise',
-  'mediumvioletred','midnightblue','mintcream','mistyrose','moccasin','navajowhite','navy',
-  'oldlace','olive','olivedrab','orange','orangered','orchid','palegoldenrod','palegreen',
-  'paleturquoise','palevioletred','papayawhip','peachpuff','peru','pink','plum','powderblue',
-  'purple','rebeccapurple','red','rosybrown','royalblue','saddlebrown','salmon','sandybrown',
-  'seagreen','seashell','sienna','silver','skyblue','slateblue','slategray','slategrey','snow',
-  'springgreen','steelblue','tan','teal','thistle','tomato','turquoise','violet','wheat','white',
-  'whitesmoke','yellow','yellowgreen'
+  'aliceblue','antiquewhite','aqua','aquamarine','azure','beige','bisque','blanchedalmond','blue','blueviolet','brown','burlywood','cadetblue','chartreuse', 'chocolate','coral','cornflowerblue','cornsilk','crimson','cyan','darkblue','darkcyan', 'darkgoldenrod','darkgray','darkgreen','darkgrey','darkkhaki','darkmagenta','darkolivegreen', 'darkorange','darkorchid','darkred','darksalmon','darkseagreen','darkslateblue','darkslategray','darkslategrey','darkturquoise','darkviolet','deeppink','deepskyblue','dimgray','dimgrey', 'dodgerblue','firebrick','floralwhite','forestgreen','fuchsia','gainsboro','ghostwhite','gold', 'goldenrod','gray','green','greenyellow','grey','honeydew','hotpink','indianred','indigo','ivory','khaki','lavender','lavenderblush','lawngreen','lemonchiffon','lightblue','lightcoral', 'lightcyan','lightgoldenrodyellow','lightgray','lightgreen','lightgrey','lightpink','lightsalmon','lightseagreen','lightskyblue','lightslategray','lightslategrey','lightsteelblue','lightyellow', 'lime','limegreen','linen','magenta','maroon','mediumaquamarine','mediumblue','mediumorchid','mediumpurple','mediumseagreen','mediumslateblue','mediumspringgreen','mediumturquoise','mediumvioletred','midnightblue','mintcream','mistyrose','moccasin','navajowhite','navy','oldlace','olive','olivedrab','orange','orangered','orchid','palegoldenrod','palegreen','paleturquoise','palevioletred','papayawhip','peachpuff','peru','pink','plum','powderblue', 'purple','rebeccapurple','red','rosybrown','royalblue','saddlebrown','salmon','sandybrown','seagreen','seashell','sienna','silver','skyblue','slateblue','slategray','slategrey','springgreen','steelblue','tan','teal','thistle','tomato','turquoise','violet','wheat','yellow','yellowgreen'
 ];
 function parseStyleToFields(styleStr) {
   const s = styleStr.toLowerCase();
@@ -718,7 +699,7 @@ async function main(host = {}, fetchUrlOverride) {
       pointer-events: none;
       background: rgba(255, 235, 59, .65); /* warm yellow */
       outline: 1px solid rgba(0,0,0,.12);
-      z-index: 9999;
+      z-index: 0;
       animation: aftQlFlash 1.4s ease-out 1 forwards;
       mix-blend-mode: multiply;
     }
@@ -1303,7 +1284,8 @@ async function main(host = {}, fetchUrlOverride) {
           ul.style.width = `${w}px`;
           ul.style.height= `${underlineHeight}px`;
           ul.style.backgroundImage = makeWavyDataURI(ulColor, 2, 6);
-          bg.appendChild(ul);
+          const { fg } = ensureLayerContainers(page);
+          fg.appendChild(ul);
         }
       }
       range.detach();
@@ -1749,6 +1731,7 @@ async function main(host = {}, fetchUrlOverride) {
   eventBus.on('pagesloaded',        () => { checkWordsDetectable(); });
   const fix = document.createElement('style');
   fix.textContent = `
+    .textLayer{position:relative; isolation:isolate;}
     .textLayer span {
       pointer-events:auto !important;
       opacity:1 !important;
@@ -1758,9 +1741,12 @@ async function main(host = {}, fetchUrlOverride) {
       position:absolute;
       left:0; top:0; right:0; bottom:0;
       pointer-events:none;
+      position:absolute;                 /* pdf.js already does this; ensure it */
+      z-index:2;                         /* above bg */
+      color:#000 !important;             /* make spans the visible glyphs */
+      -webkit-text-fill-color:#000 !important;
     }
-    .textLayer .aft-bg { z-index: 1; }     /* highlights behind text */
-    .textLayer span    { z-index: 2; }     /* the glyph spans */
+    .textLayer .aft-bg { z-index: 1; }   
     .textLayer .aft-fg { z-index: 3; } 
     .styled-word { 
       display: contents !important;
@@ -1771,6 +1757,7 @@ async function main(host = {}, fetchUrlOverride) {
       position: absolute;
       pointer-events: none;
       mix-blend-mode: multiply;  
+      z-index:1;    
     }
   `;
   fix.textContent += `
@@ -1782,7 +1769,7 @@ async function main(host = {}, fetchUrlOverride) {
     .word-highlight.pulse {
       animation: pulseHighlight 0.9s ease-out 0s 2 alternate;
       mix-blend-mode: normal !important;
-      z-index: 10 !important;
+      z-index: 1 !important;
       opacity: 1 !important;
     }
     .styled-word.pulse {
