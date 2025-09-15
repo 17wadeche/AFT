@@ -737,6 +737,9 @@ async function main(host = {}, fetchUrlOverride) {
     if (includeCustom && customRules.length && hasBUandOU()) {
       styleWordsToUse.push(...customRules.map(r => ({ style: r.style, words: r.words })));
     }
+    styleWordsToUse = styleWordsToUse
+      .map(normalizeRuleFromStorage)
+      .filter(Boolean);
     activeWordsSet = new Set();
     styleWordsToUse.forEach(r => {
       r.words.forEach(w => activeWordsSet.add(normWord(w)));
