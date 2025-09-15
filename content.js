@@ -294,7 +294,7 @@ async function main(host = {}, fetchUrlOverride) {
     };
   }
   function flashRectsOnPage(pageEl, rects) {
-    const layer = getTextLayer(pageEl);
+    const { bg } = ensureLayerContainers(pageEl);
     const overlays = [];
     rects.forEach(r => {
       const box = document.createElement('div');
@@ -304,7 +304,7 @@ async function main(host = {}, fetchUrlOverride) {
       box.style.top    = `${y}px`;
       box.style.width  = `${w}px`;
       box.style.height = `${h}px`;
-      layer.appendChild(box);
+      bg.appendChild(box);
       overlays.push(box);
     });
     setTimeout(() => overlays.forEach(o => o.remove()), 1600);
@@ -496,26 +496,23 @@ async function main(host = {}, fetchUrlOverride) {
       bottomY: clientRect.bottom - layerRect.top
     };
   }
-  function ensureTextLayerRendered(pageNumber) {
-    const pv = pdfViewer._pages?.[pageNumber - 1];
-    if (!pv) return Promise.resolve();
-    if (pv.textLayer && pv.textLayer.renderingDone) return Promise.resolve();
-    return new Promise(resolve => {
-      let done = false;
-      const finish = () => { if (done) return; done = true; cleanup(); resolve(); };
-      const onTL  = ({ pageNumber: n }) => { if (n === pageNumber) finish(); };
-      const onPR  = ({ pageNumber: n }) => { if (n === pageNumber) finish(); };
-      const cleanup = () => {
-        eventBus.off('textlayerrendered', onTL);
-        eventBus.off('pagerendered', onPR);
-        clearTimeout(to);
-      };
-      eventBus.on('textlayerrendered', onTL);
-      eventBus.on('pagerendered', onPR);
-      const to = setTimeout(finish, 1200);
-    });
+  function ensureLayerContainers(pageEl) {
+    const layer = getTextLayer(pageEl);
+    let bg = layer.querySelector('.aft-bg');
+    let fg = layer.querySelector('.aft-fg');
+    if (!bg) {
+      bg = document.createElement('div');
+      bg.className = 'aft-bg';
+      layer.prepend(bg);                     // behind spans by DOM order
+    }
+    if (!fg) {
+      fg = document.createElement('div');
+      fg.className = 'aft-fg';
+      layer.append(fg);                      // above spans for underlines
+    }
+    return { bg, fg };
   }
-  function waitForPageReady(pageNumber, timeout = 1000) {
+    function waitForPageReady(pageNumber, timeout = 1000) {
     return new Promise(resolve => {
       let done = false;
       const finish = () => {
@@ -1261,7 +1258,7 @@ async function main(host = {}, fetchUrlOverride) {
         }
       }
     }
-    const layer = getTextLayer(page);
+    const { bg, fg } = ensureLayerContainers(page);
     const jobs = Object.values(jobsByKey).flat();
     for (const job of jobs) {
       const { style } = job;
@@ -1291,9 +1288,8 @@ async function main(host = {}, fetchUrlOverride) {
             width:${w}px;
             height:${h}px;
             pointer-events:none;
-            mix-blend-mode:multiply;
-            z-index:5`;
-          layer.appendChild(box);
+            mix-blend-mode:multiply`;
+          bg.appendChild(box);
         }
         if (hasUL) {
           const ul = document.createElement('div');
@@ -1303,11 +1299,11 @@ async function main(host = {}, fetchUrlOverride) {
           const ulColor = getUnderlineColorFromStyle(style);
           const underlineHeight = 4;
           ul.style.left  = `${x}px`;
-          ul.style.top   = `${bottomY - underlineHeight}px`;   // no magic -3
+          ul.style.top   = `${bottomY - underlineHeight}px`;
           ul.style.width = `${w}px`;
           ul.style.height= `${underlineHeight}px`;
           ul.style.backgroundImage = makeWavyDataURI(ulColor, 2, 6);
-          layer.appendChild(ul);
+          bg.appendChild(ul);
         }
       }
       range.detach();
@@ -1756,8 +1752,16 @@ async function main(host = {}, fetchUrlOverride) {
     .textLayer span {
       pointer-events:auto !important;
       opacity:1 !important;
-      mix-blend-mode:multiply;
     }
+    .textLayer .aft-bg,
+    .textLayer .aft-fg {
+      position:absolute;
+      left:0; top:0; right:0; bottom:0;
+      pointer-events:none;
+    }
+    .textLayer .aft-bg { z-index: 1; }     /* highlights behind text */
+    .textLayer span    { z-index: 2; }     /* the glyph spans */
+    .textLayer .aft-fg { z-index: 3; } 
     .styled-word { 
       display: contents !important;
       font:inherit;
@@ -1787,7 +1791,6 @@ async function main(host = {}, fetchUrlOverride) {
     .word-underline {
       position:absolute;
       pointer-events:none;
-      z-index: 3;
       height:4px;
       background-repeat:repeat-x;
       background-position:left bottom;
