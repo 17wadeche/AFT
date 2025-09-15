@@ -125,7 +125,7 @@ function makeRegex(word) {
   } else {
     pattern = esc(w) + '(?:s|ed)?';
   }
-  return new RegExp(`(?<![\\p{L}\\p{N}])(${pattern})`, 'giu');
+  return new RegExp(`(?<![\\p{L}\\p{N}])(${pattern})(?![\\p{L}\\p{N}])`, 'giu');
 }
 const FORCE_TEXT_VISIBLE = ';color:#000 !important;-webkit-text-fill-color:#000 !important;';
 const CSS_COLOR_KEYWORDS = [
@@ -1204,6 +1204,7 @@ async function main(host = {}, fetchUrlOverride) {
       const p = w.parentNode;
       while (w.firstChild) p.insertBefore(w.firstChild, w);
       w.remove();
+      p.normalize();
     });
     scope.querySelectorAll('.word-highlight, .word-underline').forEach(el => el.remove());
   }
@@ -1313,8 +1314,9 @@ async function main(host = {}, fetchUrlOverride) {
           `-webkit-text-stroke:0 ${clr} !important;` +
           `text-shadow:none !important;`;
       }
-      wrap.appendChild(target.cloneNode(true));
-      target.parentNode.replaceChild(wrap, target);
+      const parent = target.parentNode;
+      parent.replaceChild(wrap, target);  
+      wrap.appendChild(target);    
     }
   }
   function isTextStyle(rule) {
@@ -1573,19 +1575,15 @@ async function main(host = {}, fetchUrlOverride) {
   const buLabel = document.createElement('label');
   buLabel.textContent = 'BU:';
   buLabel.style.fontWeight = 'bold';
-
   const ouLabel = document.createElement('label');
   ouLabel.textContent = 'OU:';
   ouLabel.style.fontWeight = 'bold';
-
   const buRow = document.createElement('div');
   buRow.className = 'aft-row';
   buRow.append(buLabel, buSelect);
-
   const ouRow = document.createElement('div');
   ouRow.className = 'aft-row';
   ouRow.append(ouLabel, ouSelect);
-
   hlBody.append(
     buRow,
     ouRow,
@@ -1693,7 +1691,7 @@ async function main(host = {}, fetchUrlOverride) {
     try {
       const url = new URL(u);
       const qpName =
-       url.searchParams.get('filename') ||
+        url.searchParams.get('filename') ||
         url.searchParams.get('fileName') ||
         url.searchParams.get('name') ||
         url.searchParams.get('download');
@@ -1734,9 +1732,11 @@ async function main(host = {}, fetchUrlOverride) {
     .styled-word {
       display: inline !important;
       font: inherit;
+      line-height: inherit;
       letter-spacing: inherit !important;
-      box-decoration-break: clone;
-      -webkit-box-decoration-break: clone;
+      word-spacing: inherit !important;
+      vertical-align: baseline;
+      transform: translateZ(0);
       mix-blend-mode:multiply;
     }
     .word-highlight {
