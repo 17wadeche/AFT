@@ -577,7 +577,6 @@ async function main(host = {}, fetchUrlOverride) {
   }
   const styleTag = document.createElement('style');
   styleTag.textContent = `
-    .aft-ql-flash { pointer-events: none; }
     .modern-select {
       color: #000;
       -webkit-appearance: none;
@@ -1728,18 +1727,18 @@ async function main(host = {}, fetchUrlOverride) {
   fix.textContent = `
     .textLayer{position:relative; isolation:isolate;}
     .textLayer span {
-      pointer-events:auto !important;
-      opacity:1 !important;
+      position: absolute; 
+      z-index: 2; 
+      pointer-events: auto !important;
+      opacity: 1 !important;
+      color: #000 !important;
+      -webkit-text-fill-color: #000 !important;
     }
     .textLayer .aft-bg,
     .textLayer .aft-fg {
       position:absolute;
       left:0; top:0; right:0; bottom:0;
       pointer-events:none;
-      position:absolute;                 /* pdf.js already does this; ensure it */
-      z-index:2;                         /* above bg */
-      color:#000 !important;             /* make spans the visible glyphs */
-      -webkit-text-fill-color:#000 !important;
     }
     .textLayer .aft-bg { z-index: 1; }   
     .textLayer .aft-fg { z-index: 3; } 
