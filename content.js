@@ -251,19 +251,32 @@ async function main(host = {}, fetchUrlOverride) {
     if (m) scale = parseFloat(m[1]) || 1;
     return scale;
   }
-  function flashRectsOnPage(pageEl, rects) {
-    const pageRect = pageEl.getBoundingClientRect();
+  function getLayerRect(pageEl) {
+    const tl = pageEl.querySelector('.textLayer');
+    return (tl ? tl.getBoundingClientRect() : pageEl.getBoundingClientRect());
+  }
+  function toPageLocal(pageEl, clientRect) {
     const scale = getPageScale(pageEl);
+    const layerRect = getLayerRect(pageEl);
+    return {
+      x:      (clientRect.left   - layerRect.left)   / scale,
+      y:      (clientRect.top    - layerRect.top)    / scale,
+      w:       clientRect.width                      / scale,
+      h:       clientRect.height                     / scale,
+      bottomY:(clientRect.bottom - layerRect.top)    / scale,
+      scale
+    };
+  }
+  function flashRectsOnPage(pageEl, rects) {
     const overlays = [];
     rects.forEach(r => {
       const box = document.createElement('div');
       box.className = 'aft-ql-flash';
-      const x = (r.left - pageRect.left - 8) / scale;
-      const y = (r.top  - pageRect.top  - 8) / scale;
+      const { x, y, w, h } = toPageLocal(pageEl, r);
       box.style.left   = `${x}px`;
       box.style.top    = `${y}px`;
-      box.style.width  = `${r.width / scale}px`;
-      box.style.height = `${r.height / scale}px`;
+      box.style.width  = `${w}px`;
+      box.style.height = `${h}px`;
       pageEl.appendChild(box);
       overlays.push(box);
     });
@@ -341,9 +354,11 @@ async function main(host = {}, fetchUrlOverride) {
       const rects = Array.from(rng.getClientRects()).filter(r => r.width && r.height);
       try { rng.detach?.(); } catch {}
       if (rects.length) {
-        const yLocal = (rects[0].top - pageRect.top - 8) / scale;
+        const layerRect = getLayerRect(pageEl);
+        const scale = getPageScale(pageEl);
+        const yLocal = (rects[0].top - layerRect.top) / scale;
         const target = pageEl.offsetTop + Math.max(0, yLocal - 60);
-        container.scrollTo({ top: target, behavior: "smooth" });
+        container.scrollTo({ top: target, behavior: 'smooth' });
         flashRectsOnPage(pageEl, rects);
         return true;
       }
@@ -396,9 +411,11 @@ async function main(host = {}, fetchUrlOverride) {
           try { r.detach?.(); } catch {}
         }
         if (rects.length) {
-          const yLocal = (rects[0].top - pageRect.top - 8) / scale;
+          const layerRect = getLayerRect(pageEl);
+          const scale = getPageScale(pageEl);
+          const yLocal = (rects[0].top - layerRect.top) / scale;
           const target = pageEl.offsetTop + Math.max(0, yLocal - 60);
-          container.scrollTo({ top: target, behavior: "smooth" });
+          container.scrollTo({ top: target, behavior: 'smooth' });
           flashRectsOnPage(pageEl, rects);
           return true;
         }
@@ -1220,19 +1237,19 @@ async function main(host = {}, fetchUrlOverride) {
       const m = page.style.transform.match(/scale\(([^)]+)\)/);
       if (m) scale = parseFloat(m[1]);
       for (const r of range.getClientRects()) {
+        const layerRect = getLayerRect(page);
+        const { x, y, w, h, bottomY } = toPageLocal(page, r);
         if (hasBg) {
           const box = document.createElement('div');
           box.className = 'word-highlight';
           if (shift) box.classList.add('shift-left');
           if (pulseMode && job.isNew) box.classList.add('pulse');
-          const x = (r.left - pageRect.left - 8) / scale;
-          const y = (r.top  - pageRect.top  - 8) / scale;
           box.style.cssText = `${style};
             position:absolute;
             left:${x}px;
             top:${y}px;
-            width:${r.width  / scale}px;
-            height:${r.height / scale}px;
+            width:${w}px;
+            height:${h}px;
             pointer-events:none;
             mix-blend-mode:multiply;
             z-index:5`;
@@ -1244,14 +1261,11 @@ async function main(host = {}, fetchUrlOverride) {
           if (shift) ul.classList.add('shift-left');
           if (pulseMode && job.isNew) ul.classList.add('pulse');
           const ulColor = getUnderlineColorFromStyle(style);
-          const x = (r.left - pageRect.left - 8) / scale;
-          const y = (r.bottom - pageRect.top - 8 - 3) / scale; 
-          const w = r.width / scale;
-          const h = 4;
+          const underlineHeight = 4;
           ul.style.left  = `${x}px`;
-          ul.style.top   = `${y}px`;
+          ul.style.top   = `${bottomY - underlineHeight}px`;   // no magic -3
           ul.style.width = `${w}px`;
-          ul.style.height= `${h}px`;
+          ul.style.height= `${underlineHeight}px`;
           ul.style.backgroundImage = makeWavyDataURI(ulColor, 2, 6);
           page.appendChild(ul);
         }
@@ -1408,7 +1422,7 @@ async function main(host = {}, fetchUrlOverride) {
       height: heightPx + 'px',
     });
     Object.assign(container.style, {
-      position: 'absolute',      // <-- important
+      position: 'absolute',
       inset: '0',
       overflow: 'auto',
       background: '#000',
