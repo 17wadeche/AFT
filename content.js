@@ -294,17 +294,17 @@ async function main(host = {}, fetchUrlOverride) {
     };
   }
   function flashRectsOnPage(pageEl, rects) {
-    const pageNumber = getPageNumberForDiv(pageEl);
+    const layer = getTextLayer(pageEl);
     const overlays = [];
     rects.forEach(r => {
       const box = document.createElement('div');
       box.className = 'aft-ql-flash';
-      const { x, y, w, h } = toPageLocal(pageEl, r, pageNumber);
+      const { x, y, w, h } = toLayerLocal(pageEl, r);
       box.style.left   = `${x}px`;
       box.style.top    = `${y}px`;
       box.style.width  = `${w}px`;
       box.style.height = `${h}px`;
-      pageEl.appendChild(box);
+      layer.appendChild(box);
       overlays.push(box);
     });
     setTimeout(() => overlays.forEach(o => o.remove()), 1600);
@@ -382,8 +382,7 @@ async function main(host = {}, fetchUrlOverride) {
       const rects = Array.from(rng.getClientRects()).filter(r => r.width && r.height);
       try { rng.detach?.(); } catch {}
       if (rects.length) {
-        const layerRect = getLayerRect(pageEl);
-        const scale = getPageScale(pageEl);
+        const layerRect = getTextLayer(pageEl).getBoundingClientRect();
         const yLocal = (rects[0].top - layerRect.top) / scale;
         const target = pageEl.offsetTop + Math.max(0, yLocal - 60);
         container.scrollTo({ top: target, behavior: 'smooth' });
@@ -439,8 +438,7 @@ async function main(host = {}, fetchUrlOverride) {
           try { r.detach?.(); } catch {}
         }
         if (rects.length) {
-          const layerRect = getLayerRect(pageEl);
-          const scale = getPageScale(pageEl, pageNumber);
+          const layerRect = getTextLayer(pageEl).getBoundingClientRect();
           const yLocal = (rects[0].top - layerRect.top) / scale;
           const target = pageEl.offsetTop + Math.max(0, yLocal - 60);
           container.scrollTo({ top: target, behavior: 'smooth' });
@@ -483,6 +481,20 @@ async function main(host = {}, fetchUrlOverride) {
       if (text.includes(needle)) return n;
     }
     return null;
+  }
+  function getTextLayer(pageEl) {
+    return pageEl.querySelector('.textLayer');
+  }
+  function toLayerLocal(pageEl, clientRect) {
+    const layer = getTextLayer(pageEl);
+    const layerRect = layer.getBoundingClientRect();
+    return {
+      x: clientRect.left   - layerRect.left,
+      y: clientRect.top    - layerRect.top,
+      w: clientRect.width,
+      h: clientRect.height,
+      bottomY: clientRect.bottom - layerRect.top
+    };
   }
   function ensureTextLayerRendered(pageNumber) {
     const pv = pdfViewer._pages?.[pageNumber - 1];
@@ -1249,7 +1261,7 @@ async function main(host = {}, fetchUrlOverride) {
         }
       }
     }
-    const pageNumber = getPageNumberForDiv(page);
+    const layer = getTextLayer(page);
     const jobs = Object.values(jobsByKey).flat();
     for (const job of jobs) {
       const { style } = job;
@@ -1266,8 +1278,7 @@ async function main(host = {}, fetchUrlOverride) {
       const m = page.style.transform.match(/scale\(([^)]+)\)/);
       if (m) scale = parseFloat(m[1]);
       for (const r of range.getClientRects()) {
-        const layerRect = getLayerRect(page);
-        const { x, y, w, h, bottomY } = toPageLocal(page, r, pageNumber);
+        const { x, y, w, h, bottomY } = toLayerLocal(page, r);
         if (hasBg) {
           const box = document.createElement('div');
           box.className = 'word-highlight';
@@ -1282,7 +1293,7 @@ async function main(host = {}, fetchUrlOverride) {
             pointer-events:none;
             mix-blend-mode:multiply;
             z-index:5`;
-          page.appendChild(box);
+          layer.appendChild(box);
         }
         if (hasUL) {
           const ul = document.createElement('div');
@@ -1296,7 +1307,7 @@ async function main(host = {}, fetchUrlOverride) {
           ul.style.width = `${w}px`;
           ul.style.height= `${underlineHeight}px`;
           ul.style.backgroundImage = makeWavyDataURI(ulColor, 2, 6);
-          page.appendChild(ul);
+          layer.appendChild(ul);
         }
       }
       range.detach();
@@ -1756,6 +1767,7 @@ async function main(host = {}, fetchUrlOverride) {
       position: absolute;
       pointer-events: none;
       mix-blend-mode: multiply;  
+      z-index: 2; 
     }
   `;
   fix.textContent += `
@@ -1776,7 +1788,7 @@ async function main(host = {}, fetchUrlOverride) {
     .word-underline {
       position:absolute;
       pointer-events:none;
-      z-index:6;
+      z-index: 3;
       height:4px;
       background-repeat:repeat-x;
       background-position:left bottom;
