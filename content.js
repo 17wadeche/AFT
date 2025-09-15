@@ -1381,18 +1381,24 @@ async function main(host = {}, fetchUrlOverride) {
       Math.round(rect?.height || embed.clientHeight || parseInt(embed.getAttribute?.('height') || '0', 10) || 800),
       300
     );
-    Object.assign(container.style, {
+    const wrapper = document.createElement('div');
+    Object.assign(wrapper.style, {
       position: 'relative',
       width: '100%',
       maxWidth: '100%',
       height: heightPx + 'px',
-      overflow: 'auto',
-      background: '#000'
     });
-    embed.replaceWith(container);
+    Object.assign(container.style, {
+      position: 'absolute',      // <-- important
+      inset: '0',
+      overflow: 'auto',
+      background: '#000',
+    });
+    embed.replaceWith(wrapper);
+    wrapper.appendChild(container);
   } else {
     Object.assign(container.style, {
-      position: 'fixed',
+      position: 'absolute',
       inset: '0',
       width: '100vw',
       height: '100vh',
