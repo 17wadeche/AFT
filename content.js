@@ -799,9 +799,8 @@ async function main(host = {}, fetchUrlOverride) {
         isNew: newWordsSet.has(normWord(w)),
       }));
     });
-    pulseMode = newWordsSet.size > 0;
   }
-  updateStyleWords({suppressPulse:true});
+  updateStyleWords({});
   const buSelect = document.createElement('select');
   buSelect.style.marginLeft = '-200px';
   buSelect.style.width = 'calc(100% + 23px)';
@@ -1261,7 +1260,6 @@ async function main(host = {}, fetchUrlOverride) {
           const box = document.createElement('div');
           box.className = 'word-highlight';
           if (shift) box.classList.add('shift-left');
-          if (pulseMode && job.isNew) box.classList.add('pulse');
           box.style.cssText = `${style};
             position:absolute;
             left:${x}px;
@@ -1276,7 +1274,6 @@ async function main(host = {}, fetchUrlOverride) {
           const ul = document.createElement('div');
           ul.className = 'word-underline';
           if (shift) ul.classList.add('shift-left');
-          if (pulseMode && job.isNew) ul.classList.add('pulse');
           const ulColor = getUnderlineColorFromStyle(style);
           const underlineHeight = 4;
           ul.style.left  = `${x}px`;
@@ -1318,7 +1315,6 @@ async function main(host = {}, fetchUrlOverride) {
       const isUnderline = /text-decoration-line\s*:\s*underline/i.test(style);
       if (isUnderline) wrap.classList.add('aft-ul');
       if (shift) wrap.classList.add('shift-left');
-      if (pulseMode && job.isNew) wrap.classList.add('pulse');
       const needsForce =
         !/color\s*:/.test(style) &&
         !isUnderline; 
@@ -1356,7 +1352,6 @@ async function main(host = {}, fetchUrlOverride) {
         highlightSpan(span, styleWordsToUse, page);
       });
     });
-    if (pulseMode) setTimeout(() => { pulseMode = false; }, 1000);
     updateNoStylesBanner();
   }
   function refreshAll() {
@@ -1761,20 +1756,6 @@ async function main(host = {}, fetchUrlOverride) {
     }
   `;
   fix.textContent += `
-    @keyframes pulseHighlight {
-      0%   { filter: brightness(2.5) saturate(2); transform: scale(1);   }
-      50%  { filter: brightness(3) saturate(3); transform: scale(1.08); }
-      100% { filter: brightness(1.0) saturate(1.0); transform: scale(1);   }
-    }
-    .word-highlight.pulse {
-      animation: pulseHighlight 0.9s ease-out 0s 2 alternate;
-      mix-blend-mode: normal !important;
-      z-index: 1 !important;
-      opacity: 1 !important;
-    }
-    .styled-word.pulse {
-      animation: pulseHighlight 0.9s ease-out 0s 2 alternate;
-    }
     .word-underline {
       position:absolute;
       pointer-events:none;
