@@ -255,15 +255,16 @@ async function main(host = {}, fetchUrlOverride) {
     const tl = pageEl.querySelector('.textLayer');
     return (tl ? tl.getBoundingClientRect() : pageEl.getBoundingClientRect());
   }
-  function toLayerLocal(pageEl, clientRect) {
-    const layer = getTextLayer(pageEl);
-    const layerRect = layer.getBoundingClientRect();
+  function toPageLocal(pageEl, clientRect) {
+    const scale = getPageScale(pageEl);
+    const layerRect = getLayerRect(pageEl);
     return {
-      x:  clientRect.left   - layerRect.left,
-      y:  clientRect.top    - layerRect.top,
-      w:  clientRect.width,
-      h:  clientRect.height,
-      bottomY: clientRect.bottom - layerRect.top
+      x:      (clientRect.left   - layerRect.left)   / scale,
+      y:      (clientRect.top    - layerRect.top)    / scale,
+      w:       clientRect.width                      / scale,
+      h:       clientRect.height                     / scale,
+      bottomY:(clientRect.bottom - layerRect.top)    / scale,
+      scale
     };
   }
   function flashRectsOnPage(pageEl, rects) {
@@ -271,7 +272,7 @@ async function main(host = {}, fetchUrlOverride) {
     rects.forEach(r => {
       const box = document.createElement('div');
       box.className = 'aft-ql-flash';
-      const { x, y, w, h } = toLayerLocal(pageEl, r);
+      const { x, y, w, h } = toPageLocal(pageEl, r);
       box.style.left   = `${x}px`;
       box.style.top    = `${y}px`;
       box.style.width  = `${w}px`;
