@@ -1242,15 +1242,6 @@ async function main(host = {}, fetchUrlOverride) {
           ul.style.backgroundImage = makeWavyDataURI(ulColor, 2, 6);
           page.appendChild(ul);
         }
-        if (!hasBg && !hasUL && job.isText) {
-          const mask = document.createElement('div');
-          mask.className = 'word-mask';
-          mask.style.left   = `${x - eps}px`;
-          mask.style.top    = `${y - eps}px`;
-          mask.style.width  = `${w + 2 * eps}px`;
-          mask.style.height = `${h + 2 * eps}px`;
-          page.appendChild(mask);
-        }
       }
       range.detach();
     }
@@ -1272,9 +1263,15 @@ async function main(host = {}, fetchUrlOverride) {
       seen.add(k);
       uniqueSpanJobs.push(j);
     }
-    for (const job of uniqueSpanJobs) {
+    const liveJobs = uniqueSpanJobs.filter(j => j.node && j.node.isConnected);
+    const occupied = new Map();
+    for (const job of liveJobs) {
       const { node, start, end, style, shift } = job;
-      if (end > node.length) continue;
+      if (!node.isConnected || end > node.length) continue;
+      const occ = occupied.get(node) || [];
+      if (occ.some(([s,e]) => !(end <= s || start >= e))) {
+        continue;
+      }
       const target = start ? node.splitText(start) : node;
       target.splitText(end - start);
       const wrap = document.createElement('span');
@@ -1288,8 +1285,12 @@ async function main(host = {}, fetchUrlOverride) {
         '-webkit-text-fill-color:currentColor !important;' +
         'text-shadow:none !important;mix-blend-mode:normal;';
       wrap.style.cssText = style + PAINT_VISIBLE_FIX;
-      wrap.appendChild(target.cloneNode(true));
-      target.parentNode.replaceChild(wrap, target);
+      if (target.parentNode) {
+        target.parentNode.insertBefore(wrap, target);
+        wrap.appendChild(target); // move the actual text node inside the wrapper
+        occ.push([start, end]);
+        occupied.set(node, occ);
+      }
     }
   }
   function isTextStyle(rule) {
@@ -1693,7 +1694,7 @@ async function main(host = {}, fetchUrlOverride) {
       opacity: 1 !important;
       z-index: 2 !important;
     }
-    .textLayer span {
+    .textLayer span:not(.styled-word) {
       color: transparent !important;
       -webkit-text-fill-color: transparent !important;
       mix-blend-mode: normal !important;
