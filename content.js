@@ -245,25 +245,44 @@ async function main(host = {}, fetchUrlOverride) {
     return wordsDetectable;
   }
   const { viewerEl = null, embedEl = null } = host;
-  function getPageScale(pageEl) {
-    let scale = 1;
-    const m = pageEl?.style?.transform?.match(/scale\(([^)]+)\)/);
-    if (m) scale = parseFloat(m[1]) || 1;
-    return scale;
+  function getPageScale(pageEl, pageNumber) {
+    try {
+      const pv = pdfViewer?._pages?.[pageNumber - 1] ||
+                ([...(pdfViewer?._pages || [])].find(p => p?.div === pageEl));
+      const s = pv?.viewport?.scale ?? pv?.scale;
+      if (s && isFinite(s)) return s;
+    } catch {}
+    const tr = getComputedStyle(pageEl).transform || pageEl.style.transform || '';
+    let m = tr.match(/matrix3d\(([^)]+)\)/i);
+    if (m) {
+      const a = parseFloat(m[1].split(',')[0]);
+      if (isFinite(a) && a > 0) return a;
+    }
+    m = tr.match(/matrix\(([^)]+)\)/i);
+    if (m) {
+      const a = parseFloat(m[1].split(',')[0]);
+      if (isFinite(a) && a > 0) return a;
+    }
+    m = tr.match(/scale\(([^)]+)\)/i);
+    if (m) {
+      const a = parseFloat(m[1]);
+      if (isFinite(a) && a > 0) return a;
+    }
+    return 1;
   }
   function getLayerRect(pageEl) {
     const tl = pageEl.querySelector('.textLayer');
     return (tl ? tl.getBoundingClientRect() : pageEl.getBoundingClientRect());
   }
-  function toPageLocal(pageEl, clientRect) {
-    const scale = getPageScale(pageEl);
+  function toPageLocal(pageEl, clientRect, pageNumber) {
+    const scale = getPageScale(pageEl, pageNumber);
     const layerRect = getLayerRect(pageEl);
     return {
-      x:      (clientRect.left   - layerRect.left)   / scale,
-      y:      (clientRect.top    - layerRect.top)    / scale,
-      w:       clientRect.width                      / scale,
-      h:       clientRect.height                     / scale,
-      bottomY:(clientRect.bottom - layerRect.top)    / scale,
+      x: (clientRect.left - layerRect.left) / scale,
+      y: (clientRect.top  - layerRect.top)  / scale,
+      w:  clientRect.width                  / scale,
+      h:  clientRect.height                 / scale,
+      bottomY: (clientRect.bottom - layerRect.top) / scale,
       scale
     };
   }
