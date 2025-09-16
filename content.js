@@ -252,8 +252,7 @@ async function main(host = {}, fetchUrlOverride) {
     return scale;
   }
   function getLayerRect(pageEl) {
-    const tl = pageEl.querySelector('.textLayer');
-    return (tl ? tl.getBoundingClientRect() : pageEl.getBoundingClientRect());
+    return pageEl.getBoundingClientRect();
   }
   function toLayerLocal(pageEl, clientRect) {
     const layer = getTextLayer(pageEl);
@@ -697,6 +696,12 @@ async function main(host = {}, fetchUrlOverride) {
         background:#f3f3f3 !important;  /* keeps it readable on HC modes */
         border-color:#888 !important;
       }
+    }
+  `;
+  styleTag.textContent += `
+    .textLayer { position: absolute; inset: 0; }
+    .textLayer .aft-bg, .textLayer .aft-fg {
+      position: absolute; inset: 0; pointer-events: none;
     }
   `;
   let showingStyled = true;
