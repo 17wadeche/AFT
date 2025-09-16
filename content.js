@@ -129,26 +129,14 @@ function makeRegex(word) {
 }
 const FORCE_TEXT_VISIBLE = ';color:#000 !important;-webkit-text-fill-color:#000 !important;';
 const CSS_COLOR_KEYWORDS = [
-  'aliceblue','antiquewhite','aqua','aquamarine','azure','beige','bisque','black',
-  'blanchedalmond','blue','blueviolet','brown','burlywood','cadetblue','chartreuse',
-  'chocolate','coral','cornflowerblue','cornsilk','crimson','cyan','darkblue','darkcyan',
-  'darkgoldenrod','darkgray','darkgreen','darkgrey','darkkhaki','darkmagenta','darkolivegreen',
-  'darkorange','darkorchid','darkred','darksalmon','darkseagreen','darkslateblue','darkslategray',
-  'darkslategrey','darkturquoise','darkviolet','deeppink','deepskyblue','dimgray','dimgrey',
-  'dodgerblue','firebrick','floralwhite','forestgreen','fuchsia','gainsboro','ghostwhite','gold',
-  'goldenrod','gray','green','greenyellow','grey','honeydew','hotpink','indianred','indigo','ivory',
-  'khaki','lavender','lavenderblush','lawngreen','lemonchiffon','lightblue','lightcoral',
-  'lightcyan','lightgoldenrodyellow','lightgray','lightgreen','lightgrey','lightpink','lightsalmon',
-  'lightseagreen','lightskyblue','lightslategray','lightslategrey','lightsteelblue','lightyellow',
-  'lime','limegreen','linen','magenta','maroon','mediumaquamarine','mediumblue','mediumorchid',
-  'mediumpurple','mediumseagreen','mediumslateblue','mediumspringgreen','mediumturquoise',
-  'mediumvioletred','midnightblue','mintcream','mistyrose','moccasin','navajowhite','navy',
-  'oldlace','olive','olivedrab','orange','orangered','orchid','palegoldenrod','palegreen',
-  'paleturquoise','palevioletred','papayawhip','peachpuff','peru','pink','plum','powderblue',
-  'purple','rebeccapurple','red','rosybrown','royalblue','saddlebrown','salmon','sandybrown',
-  'seagreen','seashell','sienna','silver','skyblue','slateblue','slategray','slategrey','snow',
-  'springgreen','steelblue','tan','teal','thistle','tomato','turquoise','violet','wheat','white',
-  'whitesmoke','yellow','yellowgreen'
+  'aqua','aquamarine','blue','blueviolet','brown','burlywood','cadetblue','chartreuse', 'chocolate','coral','cornflowerblue','crimson','cyan','darkblue','darkcyan',
+  'darkgoldenrod','darkgreen','darkmagenta','darkolivegreen', 'darkorange','darkorchid','darkred','darksalmon','darkseagreen','darkturquoise','darkviolet','deeppink','deepskyblue',
+  'dodgerblue','firebrick','forestgreen','fuchsia','gold', 'goldenrod','green','greenyellow','hotpink','indianred','indigo','lawngreen','lightblue','lightcoral', 'lightgreen',
+  'lightpink','lightsalmon', 'lightseagreen','lightskyblue','lightsteelblue', 'lime','limegreen','magenta','maroon','mediumaquamarine','mediumblue','mediumorchid', 'mediumpurple',
+  'mediumseagreen','mediumslateblue','mediumspringgreen','mediumturquoise', 'mediumvioletred','midnightblue','mintcream','mistyrose','navajowhite','navy', 'olive','olivedrab',
+  'orange','orangered','orchid','palegreen', 'paleturquoise','palevioletred','peru','pink','plum','powderblue', 'purple','rebeccapurple','red','rosybrown','royalblue',
+  'saddlebrown','salmon','sandybrown', 'seagreen','sienna','silver','skyblue','slateblue', 'springgreen','steelblue','tan','teal','thistle','tomato','turquoise','violet','wheat',
+  'yellow','yellowgreen'
 ];
 function parseStyleToFields(styleStr) {
   const s = styleStr.toLowerCase();
@@ -349,10 +337,6 @@ async function main(host = {}, fetchUrlOverride) {
     );
     return walker.nextNode();
   }
-  function scrollToLocalY(pageEl, yLocal) {
-    const target = pageEl.offsetTop + Math.max(0, yLocal - 60);
-    container.scrollTo({ top: target, behavior: 'smooth' });
-  }
   function flashFirstSpanMatchOnPage(pageEl, phrase) {
     if (!phrase) return false;
     const pageRect = pageEl.getBoundingClientRect();
@@ -468,25 +452,6 @@ async function main(host = {}, fetchUrlOverride) {
       if (text.includes(needle)) return n;
     }
     return null;
-  }
-  function ensureTextLayerRendered(pageNumber) {
-    const pv = pdfViewer._pages?.[pageNumber - 1];
-    if (!pv) return Promise.resolve();
-    if (pv.textLayer && pv.textLayer.renderingDone) return Promise.resolve();
-    return new Promise(resolve => {
-      let done = false;
-      const finish = () => { if (done) return; done = true; cleanup(); resolve(); };
-      const onTL  = ({ pageNumber: n }) => { if (n === pageNumber) finish(); };
-      const onPR  = ({ pageNumber: n }) => { if (n === pageNumber) finish(); };
-      const cleanup = () => {
-        eventBus.off('textlayerrendered', onTL);
-        eventBus.off('pagerendered', onPR);
-        clearTimeout(to);
-      };
-      eventBus.on('textlayerrendered', onTL);
-      eventBus.on('pagerendered', onPR);
-      const to = setTimeout(finish, 1200);
-    });
   }
   function waitForPageReady(pageNumber, timeout = 1000) {
     return new Promise(resolve => {
@@ -1276,7 +1241,7 @@ async function main(host = {}, fetchUrlOverride) {
           const ulColor = getUnderlineColorFromStyle(style);
           const underlineHeight = 4;
           ul.style.left  = `${x}px`;
-          ul.style.top   = `${bottomY - underlineHeight}px`;   // no magic -3
+          ul.style.top   = `${bottomY - underlineHeight}px`;
           ul.style.width = `${w}px`;
           ul.style.height= `${underlineHeight}px`;
           ul.style.backgroundImage = makeWavyDataURI(ulColor, 2, 6);
@@ -1579,19 +1544,15 @@ async function main(host = {}, fetchUrlOverride) {
   const buLabel = document.createElement('label');
   buLabel.textContent = 'BU:';
   buLabel.style.fontWeight = 'bold';
-
   const ouLabel = document.createElement('label');
   ouLabel.textContent = 'OU:';
   ouLabel.style.fontWeight = 'bold';
-
   const buRow = document.createElement('div');
   buRow.className = 'aft-row';
   buRow.append(buLabel, buSelect);
-
   const ouRow = document.createElement('div');
   ouRow.className = 'aft-row';
   ouRow.append(ouLabel, ouSelect);
-
   hlBody.append(
     buRow,
     ouRow,
@@ -1667,8 +1628,8 @@ async function main(host = {}, fetchUrlOverride) {
   let data, fetchUrl, resp;
   try {
     fetchUrl = fetchUrlOverride ||
-           (embed && embed.getAttribute && embed.getAttribute('original-url')) ||
-           location.href;
+          (embed && embed.getAttribute && embed.getAttribute('original-url')) ||
+          location.href;
     resp = await fetch(fetchUrl, { credentials: 'include', cache: 'force-cache' });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     data = await resp.arrayBuffer();
@@ -1695,12 +1656,11 @@ async function main(host = {}, fetchUrlOverride) {
     }
     return '';
   }
-
   function getNameFromUrl(u = '') {
     try {
       const url = new URL(u);
       const qpName =
-       url.searchParams.get('filename') ||
+        url.searchParams.get('filename') ||
         url.searchParams.get('fileName') ||
         url.searchParams.get('name') ||
         url.searchParams.get('download');
