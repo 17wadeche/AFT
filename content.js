@@ -1222,6 +1222,8 @@ async function main(host = {}, fetchUrlOverride) {
         const layerRect = getLayerRect(page);
         const { x, y, w, h, bottomY } = toLayerLocal(page, r);
         const { bg } = ensureLayerContainers(page);
+        const pxSnapPos = v => (Math.round(v * dpr) / dpr);
+        const pxSnapSize = v => (Math.ceil(v * dpr) / dpr);
         if (hasBg) {
           const box = document.createElement('div');
           box.className = 'word-highlight';
@@ -1229,10 +1231,10 @@ async function main(host = {}, fetchUrlOverride) {
           if (pulseMode && job.isNew) box.classList.add('pulse');
           box.style.cssText = `${style};
             position:absolute;
-            left:${x}px;
-            top:${y}px;
-            width:${w}px;
-            height:${h}px;
+            box.style.left   = pxSnapPos(x) + 'px';
+            box.style.top    = pxSnapPos(y) + 'px';
+            box.style.width  = pxSnapSize(w) + 'px';
+            box.style.height = pxSnapSize(h) + 'px';
             pointer-events:none;
             mix-blend-mode:multiply;
             z-index:5`;
@@ -1245,10 +1247,10 @@ async function main(host = {}, fetchUrlOverride) {
           if (pulseMode && job.isNew) ul.classList.add('pulse');
           const ulColor = getUnderlineColorFromStyle(style);
           const underlineHeight = 4;
-          ul.style.left  = `${x}px`;
-          ul.style.top   = `${bottomY - underlineHeight}px`;
-          ul.style.width = `${w}px`;
-          ul.style.height= `${underlineHeight}px`;
+          ul.style.left  = pxSnapPos(x) + 'px';
+          ul.style.top   = pxSnapPos(bottomY - underlineHeight) + 'px';
+          ul.style.width = pxSnapSize(w) + 'px';
+          ul.style.height= pxSnapSize(underlineHeight) + 'px';
           ul.style.backgroundImage = makeWavyDataURI(ulColor, 2, 6);
           bg.appendChild(ul);
         }
