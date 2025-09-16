@@ -219,7 +219,7 @@ async function main(host = {}, fetchUrlOverride) {
     const b = page.getBoundingClientRect();
     const dLeft = Math.round(a.left - b.left);
     const dTop  = Math.round(a.top  - b.top);
-    AFT_SHIFT_FIX = (dLeft !== 9 || dTop !== 9) ? 1.8 : 0;
+    AFT_SHIFT_FIX = (dLeft !== 9 || dTop !== 9) ? 1.5 : 0;
     _shiftFixComputed = true;
     if ((globalThis.DEBUG ?? false) === true) {
       console.debug('[AFT] shift-fix check:', { dLeft, dTop, AFT_SHIFT_FIX });
@@ -1312,7 +1312,7 @@ async function main(host = {}, fetchUrlOverride) {
       wrap.style.cssText = style + (needsForce ? FORCE_TEXT_VISIBLE : '');
       if (AFT_SHIFT_FIX) {
         wrap.classList.add('aft-shift');
-        wrap.style.setProperty('--aft-shift-x', AFT_SHIFT_FIX + 'px');
+        wrap.style.setProperty('--aft-shift-x', AFT_SHIFT_FIX + .33333 + 'px');
         wrap.style.setProperty('--aft-shift-y', AFT_SHIFT_FIX + 'px');
       }
       wrap.appendChild(target.cloneNode(true));
