@@ -1221,6 +1221,7 @@ async function main(host = {}, fetchUrlOverride) {
       for (const r of range.getClientRects()) {
         const layerRect = getLayerRect(page);
         const { x, y, w, h, bottomY } = toLayerLocal(page, r);
+        const { bg } = ensureLayerContainers(page);
         if (hasBg) {
           const box = document.createElement('div');
           box.className = 'word-highlight';
@@ -1235,7 +1236,7 @@ async function main(host = {}, fetchUrlOverride) {
             pointer-events:none;
             mix-blend-mode:multiply;
             z-index:5`;
-          page.appendChild(box);
+          bg.appendChild(box);
         }
         if (hasUL) {
           const ul = document.createElement('div');
@@ -1249,7 +1250,7 @@ async function main(host = {}, fetchUrlOverride) {
           ul.style.width = `${w}px`;
           ul.style.height= `${underlineHeight}px`;
           ul.style.backgroundImage = makeWavyDataURI(ulColor, 2, 6);
-          page.appendChild(ul);
+          bg.appendChild(ul);
         }
       }
       range.detach();
