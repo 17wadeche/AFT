@@ -198,7 +198,10 @@ customRules = customRules
   .map(normalizeRuleFromStorage)
   .filter(Boolean);
 async function main(host = {}, fetchUrlOverride) {
+  let wrapper = null;
   const dpr = window.devicePixelRatio || 1;
+  const pxSnapPos  = v => Math.round(v * dpr) / dpr;   // for left/top
+  const pxSnapSize = v => Math.ceil(v * dpr)  / dpr; 
   const px  = v => (Math.round(v * dpr) / dpr);
   let wordsDetectable = null;
   let _checkingWords = null;
@@ -1219,11 +1222,8 @@ async function main(host = {}, fetchUrlOverride) {
       const m = page.style.transform.match(/scale\(([^)]+)\)/);
       if (m) scale = parseFloat(m[1]);
       for (const r of range.getClientRects()) {
-        const layerRect = getLayerRect(page);
         const { x, y, w, h, bottomY } = toLayerLocal(page, r);
         const { bg } = ensureLayerContainers(page);
-        const pxSnapPos = v => (Math.round(v * dpr) / dpr);
-        const pxSnapSize = v => (Math.ceil(v * dpr) / dpr);
         if (hasBg) {
           const box = document.createElement('div');
           box.className = 'word-highlight';
@@ -1231,13 +1231,13 @@ async function main(host = {}, fetchUrlOverride) {
           if (pulseMode && job.isNew) box.classList.add('pulse');
           box.style.cssText = `${style};
             position:absolute;
-            box.style.left   = pxSnapPos(x) + 'px';
-            box.style.top    = pxSnapPos(y) + 'px';
-            box.style.width  = pxSnapSize(w) + 'px';
-            box.style.height = pxSnapSize(h) + 'px';
             pointer-events:none;
             mix-blend-mode:multiply;
-            z-index:5`;
+            z-index:5;`;
+          box.style.left   = pxSnapPos(x) + 'px';
+          box.style.top    = pxSnapPos(y) + 'px';
+          box.style.width  = pxSnapSize(w) + 'px';
+          box.style.height = pxSnapSize(h) + 'px';
           bg.appendChild(box);
         }
         if (hasUL) {
@@ -1641,8 +1641,11 @@ async function main(host = {}, fetchUrlOverride) {
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     data = await resp.arrayBuffer();
     console.log('[AFT] fetched PDF bytes:', data.byteLength, 'from', fetchUrl);
-  } catch (err) {
-    if (DEBUG) console.debug('[AFT] PDF fetch failed:', err);
+  } 
+  catch (err) {
+    if (typeof DEBUG !== 'undefined' && DEBUG) {
+      console.debug('[AFT] PDF fetch failed:', err);
+    }
     return;
   }
   function parseFilenameFromCD(v) {
@@ -1881,8 +1884,10 @@ async function main(host = {}, fetchUrlOverride) {
   if (!hasEmbedForToggle) {
     toggle.textContent = 'Open Original';
   }
+
   toggle.onclick = () => {
-    if (embed) {
+    if (wrapper && embed) {
+      wrapper.replaceWith(embed);
       embed.style.display = '';
     } else if (window.__AFT_FETCH_URL) {
       location.href = window.__AFT_FETCH_URL + (window.__AFT_FETCH_URL.includes('#') ? '' : '#noaft');
