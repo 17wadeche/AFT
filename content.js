@@ -1452,7 +1452,7 @@ async function main(host = {}, fetchUrlOverride) {
       inset: 0;
       border-radius: 50%;
       background: #1804F0;
-      opacity: 0.25;
+      opacity: 0.2;
       filter: blur(10px);
       pointer-events: none;
     }
