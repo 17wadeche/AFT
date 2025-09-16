@@ -1706,6 +1706,7 @@ async function main(host = {}, fetchUrlOverride) {
       position: absolute;
       pointer-events: none;
       mix-blend-mode: multiply;  
+      opacity: .3 !important;
     }
   `;
   fix.textContent += `
