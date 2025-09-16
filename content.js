@@ -219,7 +219,7 @@ async function main(host = {}, fetchUrlOverride) {
     const b = page.getBoundingClientRect();
     const dLeft = Math.round(a.left - b.left);
     const dTop  = Math.round(a.top  - b.top);
-    AFT_SHIFT_FIX = (dLeft !== 9 || dTop !== 9) ? 0.8 : 0;
+    AFT_SHIFT_FIX = (dLeft !== 9 || dTop !== 9) ? 1 : 0;
     _shiftFixComputed = true;
     if ((globalThis.DEBUG ?? false) === true) {
       console.debug('[AFT] shift-fix check:', { dLeft, dTop, AFT_SHIFT_FIX });
@@ -256,7 +256,7 @@ async function main(host = {}, fetchUrlOverride) {
             return true;
           }
         }
-      } catch { /* ignore */ }
+      } catch { }
       wordsDetectable = false;
       return false;
     })();
@@ -546,7 +546,7 @@ async function main(host = {}, fetchUrlOverride) {
         `;
         document.body.appendChild(noStylesBannerEl);
       }
-      noStylesBannerEl.style.background = isIncompatible ? '#f44336' /* red */ : '#ffeb3b' /* yellow */;
+      noStylesBannerEl.style.background = isIncompatible ? '#f44336' : '#ffeb3b';
       noStylesBannerEl.style.border = '1px solid rgba(0,0,0,.2)';
       noStylesBannerEl.textContent = message;
       if (wordsDetectable === null) {
@@ -675,11 +675,10 @@ async function main(host = {}, fetchUrlOverride) {
     .aft-ql-notfound {
       opacity: .7;
     }
-    /* Flash highlight for quick-jump */
     .aft-ql-flash {
       position: absolute;
       pointer-events: none;
-      background: rgba(255, 235, 59, .65); /* warm yellow */
+      background: rgba(255, 235, 59, .65);
       outline: 1px solid rgba(0,0,0,.12);
       z-index: 9999;
       animation: aftQlFlash 1.4s ease-out 1 forwards;
@@ -717,7 +716,7 @@ async function main(host = {}, fetchUrlOverride) {
       #aftCustomPanel .aft-btn-black {
         forced-color-adjust: none;
         color:#000 !important;
-        background:#f3f3f3 !important;  /* keeps it readable on HC modes */
+        background:#f3f3f3 !important;
         border-color:#888 !important;
       }
     }
