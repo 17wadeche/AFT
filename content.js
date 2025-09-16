@@ -219,7 +219,7 @@ async function main(host = {}, fetchUrlOverride) {
     const b = page.getBoundingClientRect();
     const dLeft = Math.round(a.left - b.left);
     const dTop  = Math.round(a.top  - b.top);
-    AFT_SHIFT_FIX = (dLeft !== 9 || dTop !== 9) ? 1 : 0;
+    AFT_SHIFT_FIX = (dLeft !== 9 || dTop !== 9) ? 1.5 : 0;
     _shiftFixComputed = true;
     if ((globalThis.DEBUG ?? false) === true) {
       console.debug('[AFT] shift-fix check:', { dLeft, dTop, AFT_SHIFT_FIX });
