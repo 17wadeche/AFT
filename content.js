@@ -204,12 +204,12 @@ customRules = customRules
 async function main(host = {}, fetchUrlOverride) {
   let wrapper = null;
   const dpr = window.devicePixelRatio || 1;
-  const pxSnapPos  = v => Math.round(v * dpr) / dpr;   // for left/top
+  const pxSnapPos  = v => Math.round(v * dpr) / dpr;
   const pxSnapSize = v => Math.ceil(v * dpr)  / dpr; 
   const px  = v => (Math.round(v * dpr) / dpr);
   let wordsDetectable = null;
-  let AFT_SHIFT_FIX = 0;          // 0 = no shift, 1 = shift right+down by 1px
   let _shiftFixComputed = false;
+  let AFT_SHIFT_FIX = 0;
   function computeShiftFix() {
     if (_shiftFixComputed) return;
     const tl = container?.querySelector('.page .textLayer');
@@ -219,7 +219,7 @@ async function main(host = {}, fetchUrlOverride) {
     const b = page.getBoundingClientRect();
     const dLeft = Math.round(a.left - b.left);
     const dTop  = Math.round(a.top  - b.top);
-    AFT_SHIFT_FIX = (dLeft !== 9 || dTop !== 9) ? 1 : 0;
+    AFT_SHIFT_FIX = (dLeft !== 9 || dTop !== 9) ? 0.8 : 0;
     _shiftFixComputed = true;
     if ((globalThis.DEBUG ?? false) === true) {
       console.debug('[AFT] shift-fix check:', { dLeft, dTop, AFT_SHIFT_FIX });
@@ -296,10 +296,10 @@ async function main(host = {}, fetchUrlOverride) {
       const box = document.createElement('div');
       box.className = 'aft-ql-flash';
       const { x, y, w, h } = toLayerLocal(pageEl, r);
-      box.style.left   = px(x + AFT_SHIFT_FIX) + 'px';
-      box.style.top    = px(y + AFT_SHIFT_FIX) + 'px';
-      box.style.width  = px(w) + 'px';
-      box.style.height = px(h) + 'px';
+      box.style.left   = (x + AFT_SHIFT_FIX) + 'px';
+      box.style.top    = (y + AFT_SHIFT_FIX) + 'px';
+      box.style.width  = pxSnapSize(w) + 'px';
+      box.style.height = pxSnapSize(h) + 'px';
       bg.appendChild(box);
       overlays.push(box);
     });
@@ -1255,8 +1255,8 @@ async function main(host = {}, fetchUrlOverride) {
             pointer-events:none;
             mix-blend-mode:multiply;
             z-index:5;`;
-          box.style.left   = pxSnapPos(x + AFT_SHIFT_FIX) + 'px';
-          box.style.top    = pxSnapPos(y + AFT_SHIFT_FIX) + 'px';
+          box.style.left   = (x + AFT_SHIFT_FIX) + 'px';
+          box.style.top    = (y + AFT_SHIFT_FIX) + 'px';
           box.style.width  = pxSnapSize(w) + 'px';
           box.style.height = pxSnapSize(h) + 'px';
           bg.appendChild(box);
@@ -1268,8 +1268,8 @@ async function main(host = {}, fetchUrlOverride) {
           if (pulseMode && job.isNew) ul.classList.add('pulse');
           const ulColor = getUnderlineColorFromStyle(style);
           const underlineHeight = 4;
-          ul.style.left  = pxSnapPos(x + AFT_SHIFT_FIX) + 'px';
-          ul.style.top   = pxSnapPos(bottomY - underlineHeight + AFT_SHIFT_FIX) + 'px';
+          ul.style.left  = (x + AFT_SHIFT_FIX) + 'px';
+          ul.style.top   = (bottomY - underlineHeight + AFT_SHIFT_FIX) + 'px';
           ul.style.width = pxSnapSize(w) + 'px';
           ul.style.height= pxSnapSize(underlineHeight) + 'px';
           ul.style.backgroundImage = makeWavyDataURI(ulColor, 2, 6);
@@ -1311,6 +1311,11 @@ async function main(host = {}, fetchUrlOverride) {
         !/color\s*:/.test(style) &&
         !isUnderline; 
       wrap.style.cssText = style + (needsForce ? FORCE_TEXT_VISIBLE : '');
+      if (AFT_SHIFT_FIX) {
+        wrap.classList.add('aft-shift');
+        wrap.style.setProperty('--aft-shift-x', AFT_SHIFT_FIX + 'px');
+        wrap.style.setProperty('--aft-shift-y', AFT_SHIFT_FIX + 'px');
+      }
       wrap.appendChild(target.cloneNode(true));
       target.parentNode.replaceChild(wrap, target);
     }
@@ -1725,6 +1730,12 @@ async function main(host = {}, fetchUrlOverride) {
       display: contents !important;
       font:inherit;
       letter-spacing: inherit !important;
+    }
+    .styled-word.aft-shift {
+      display: inline !important;
+      position: relative !important;
+      left: var(--aft-shift-x, 0px) !important;
+      top:  var(--aft-shift-y, 0px) !important;
     }
     .word-highlight {
       position: absolute;
