@@ -1,5 +1,5 @@
 // content.js
-try { globalThis.DEBUG ??= false; } catch { /* ignore */ }
+try { globalThis.DEBUG ??= false; } catch { }
 const ALLOWED_PREFIXES = [
   'https://cpic1cs.corp.medtronic.com:8008/sap/bc/contentserver/',
   'https://crmstage.medtronic.com/sap/bc/contentserver/',
