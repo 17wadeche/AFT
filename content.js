@@ -208,6 +208,23 @@ async function main(host = {}, fetchUrlOverride) {
   const pxSnapSize = v => Math.ceil(v * dpr)  / dpr; 
   const px  = v => (Math.round(v * dpr) / dpr);
   let wordsDetectable = null;
+  let AFT_SHIFT_FIX = 0;          // 0 = no shift, 1 = shift right+down by 1px
+  let _shiftFixComputed = false;
+  function computeShiftFix() {
+    if (_shiftFixComputed) return;
+    const tl = container?.querySelector('.page .textLayer');
+    const page = tl?.closest('.page');
+    if (!tl || !page) return;
+    const a = tl.getBoundingClientRect();
+    const b = page.getBoundingClientRect();
+    const dLeft = Math.round(a.left - b.left);
+    const dTop  = Math.round(a.top  - b.top);
+    AFT_SHIFT_FIX = (dLeft !== 9 || dTop !== 9) ? 1 : 0;
+    _shiftFixComputed = true;
+    if ((globalThis.DEBUG ?? false) === true) {
+      console.debug('[AFT] shift-fix check:', { dLeft, dTop, AFT_SHIFT_FIX });
+    }
+  }
   let _checkingWords = null;
   function getTextLayer(pageEl) {
     return pageEl.querySelector('.textLayer');
@@ -279,8 +296,8 @@ async function main(host = {}, fetchUrlOverride) {
       const box = document.createElement('div');
       box.className = 'aft-ql-flash';
       const { x, y, w, h } = toLayerLocal(pageEl, r);
-      box.style.left   = px(x) + 'px';
-      box.style.top    = px(y) + 'px';
+      box.style.left   = px(x + AFT_SHIFT_FIX) + 'px';
+      box.style.top    = px(y + AFT_SHIFT_FIX) + 'px';
       box.style.width  = px(w) + 'px';
       box.style.height = px(h) + 'px';
       bg.appendChild(box);
@@ -1238,8 +1255,8 @@ async function main(host = {}, fetchUrlOverride) {
             pointer-events:none;
             mix-blend-mode:multiply;
             z-index:5;`;
-          box.style.left   = pxSnapPos(x) + 'px';
-          box.style.top    = pxSnapPos(y) + 'px';
+          box.style.left   = pxSnapPos(x + AFT_SHIFT_FIX) + 'px';
+          box.style.top    = pxSnapPos(y + AFT_SHIFT_FIX) + 'px';
           box.style.width  = pxSnapSize(w) + 'px';
           box.style.height = pxSnapSize(h) + 'px';
           bg.appendChild(box);
@@ -1251,8 +1268,8 @@ async function main(host = {}, fetchUrlOverride) {
           if (pulseMode && job.isNew) ul.classList.add('pulse');
           const ulColor = getUnderlineColorFromStyle(style);
           const underlineHeight = 4;
-          ul.style.left  = pxSnapPos(x) + 'px';
-          ul.style.top   = pxSnapPos(bottomY - underlineHeight) + 'px';
+          ul.style.left  = pxSnapPos(x + AFT_SHIFT_FIX) + 'px';
+          ul.style.top   = pxSnapPos(bottomY - underlineHeight + AFT_SHIFT_FIX) + 'px';
           ul.style.width = pxSnapSize(w) + 'px';
           ul.style.height= pxSnapSize(underlineHeight) + 'px';
           ul.style.backgroundImage = makeWavyDataURI(ulColor, 2, 6);
@@ -1694,9 +1711,9 @@ async function main(host = {}, fetchUrlOverride) {
   eventBus.on('pagesloaded',        () => loader.remove());
   eventBus.on('pagesinit',          () => loader.remove());
   eventBus.on('documentloadfailed', () => loader.remove());
-  eventBus.on('pagesinit',         () => { checkWordsDetectable().catch(()=>{}); });
-eventBus.on('textlayerrendered', () => { checkWordsDetectable().catch(()=>{}); });
-eventBus.on('pagesloaded',       () => { checkWordsDetectable().catch(()=>{}); });
+  eventBus.on('pagesinit',         () => { checkWordsDetectable().catch(()=>{}); computeShiftFix(); });
+  eventBus.on('textlayerrendered', () => { checkWordsDetectable().catch(()=>{}); computeShiftFix(); });
+  eventBus.on('pagesloaded',       () => { checkWordsDetectable().catch(()=>{}); computeShiftFix(); });
   const fix = document.createElement('style');
   fix.textContent = `
     .textLayer span {
