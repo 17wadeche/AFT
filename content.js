@@ -1,4 +1,5 @@
 // content.js
+try { globalThis.DEBUG ??= false; } catch { /* ignore */ }
 const ALLOWED_PREFIXES = [
   'https://cpic1cs.corp.medtronic.com:8008/sap/bc/contentserver/',
   'https://crmstage.medtronic.com/sap/bc/contentserver/',
@@ -506,7 +507,7 @@ async function main(host = {}, fetchUrlOverride) {
     return true;
   }
   let container = null;
-  window.__AFT_VERSION = '0.1.3d';
+  window.__AFT_VERSION = '0.1.3e';
   console.log('[AFT] init v' + window.__AFT_VERSION, location.href);
   const AFT_UI_Z = 21474837000;
   let noStylesBannerEl = null;
