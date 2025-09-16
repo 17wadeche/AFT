@@ -1219,7 +1219,7 @@ async function main(host = {}, fetchUrlOverride) {
       range.setEnd(node, end);
       const pageRect = page.getBoundingClientRect();
       let scale = 1;
-      const m = page.style.transform.match(/scale\(([^)]+)\)/);
+      const m = page.style?.transform?.match(/scale\(([^)]+)\)/);
       if (m) scale = parseFloat(m[1]);
       for (const r of range.getClientRects()) {
         const { x, y, w, h, bottomY } = toLayerLocal(page, r);
@@ -1399,7 +1399,7 @@ async function main(host = {}, fetchUrlOverride) {
       Math.round(rect?.height || embed.clientHeight || parseInt(embed.getAttribute?.('height') || '0', 10) || 800),
       300
     );
-    const wrapper = document.createElement('div');
+    wrapper = document.createElement('div');
     Object.assign(wrapper.style, {
       position: 'relative',
       width: '100%',
