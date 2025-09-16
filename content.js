@@ -296,8 +296,8 @@ async function main(host = {}, fetchUrlOverride) {
       const box = document.createElement('div');
       box.className = 'aft-ql-flash';
       const { x, y, w, h } = toLayerLocal(pageEl, r);
-      box.style.left   = (x + AFT_SHIFT_FIX) + 'px';
-      box.style.top    = (y + AFT_SHIFT_FIX) + 'px';
+      box.style.left   = x + 'px';
+      box.style.top    = y + 'px';
       box.style.width  = pxSnapSize(w) + 'px';
       box.style.height = pxSnapSize(h) + 'px';
       bg.appendChild(box);
@@ -1254,8 +1254,8 @@ async function main(host = {}, fetchUrlOverride) {
             pointer-events:none;
             mix-blend-mode:multiply;
             z-index:5;`;
-          box.style.left   = (x + AFT_SHIFT_FIX) + 'px';
-          box.style.top    = (y + AFT_SHIFT_FIX) + 'px';
+          box.style.left   = x + 'px';
+          box.style.top    = y + 'px';
           box.style.width  = pxSnapSize(w) + 'px';
           box.style.height = pxSnapSize(h) + 'px';
           bg.appendChild(box);
@@ -1267,8 +1267,8 @@ async function main(host = {}, fetchUrlOverride) {
           if (pulseMode && job.isNew) ul.classList.add('pulse');
           const ulColor = getUnderlineColorFromStyle(style);
           const underlineHeight = 4;
-          ul.style.left  = (x + AFT_SHIFT_FIX) + 'px';
-          ul.style.top   = (bottomY - underlineHeight + AFT_SHIFT_FIX) + 'px';
+          ul.style.left  = x + 'px';
+          ul.style.top   = (bottomY - underlineHeight) + 'px';
           ul.style.width = pxSnapSize(w) + 'px';
           ul.style.height= pxSnapSize(underlineHeight) + 'px';
           ul.style.backgroundImage = makeWavyDataURI(ulColor, 2, 6);
