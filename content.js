@@ -129,13 +129,13 @@ function makeRegex(word) {
 }
 const FORCE_TEXT_VISIBLE = ';color:#000 !important;-webkit-text-fill-color:#000 !important;';
 const CSS_COLOR_KEYWORDS = [
-  'aqua','aquamarine','blue','blueviolet','brown','burlywood','cadetblue','chartreuse','chocolate','coral','cornflowerblue','crimson','cyan','darkblue','darkcyan','darkgoldenrod',
-  'darkgreen','darkmagenta','darkolivegreen','darkorange','darkorchid','darkred','darksalmon','darkseagreen','darkturquoise','darkviolet','deeppink','deepskyblue','dodgerblue',
-  'firebrick','forestgreen','fuchsia','gold','goldenrod','green','greenyellow','hotpink','indigo','lawngreen','lightblue','lightcoral','lightgreen','lightpink','lightsalmon',
-  'lightseagreen','lightskyblue','lime','limegreen','magenta','maroon','mediumaquamarine','mediumblue','mediumorchid','mediumpurple','mediumseagreen','mediumslateblue','mediumspringgreen',
-  'mediumturquoise','mediumvioletred','midnightblue','navy','olive','olivedrab', 'orange','orangered','orchid','palegreen','paleturquoise','palevioletred','peru','pink','plum',
-  'purple','rebeccapurple','red','rosybrown','royalblue','saddlebrown','salmon','sandybrown','seagreen','sienna','silver','skyblue','slateblue','springgreen','steelblue','tan',
-  'teal','thistle','tomato','turquoise','violet', 'yellow','yellowgreen'
+  'blue','orange','red','green','purple','pink','yellow','brown','aqua','aquamarine','blueviolet','burlywood','cadetblue','chartreuse','chocolate','coral','cornflowerblue','crimson',
+  'cyan','darkblue','darkcyan','darkgoldenrod','darkgreen','darkmagenta','darkolivegreen','darkorange','darkorchid','darkred','darksalmon','darkseagreen','darkturquoise','darkviolet',
+  'deeppink','deepskyblue','dodgerblue','firebrick','forestgreen','fuchsia','gold','goldenrod','greenyellow','hotpink','indigo','lawngreen','lightblue','lightcoral','lightgreen',
+  'lightpink','lightsalmon','lightseagreen','lightskyblue','lime','limegreen','magenta','maroon','mediumaquamarine','mediumblue','mediumorchid','mediumpurple','mediumseagreen',
+  'mediumslateblue','mediumspringgreen','mediumturquoise','mediumvioletred','midnightblue','navy','olive','olivedrab','orangered','orchid','palegreen','paleturquoise','palevioletred',
+  'peru','plum','rebeccapurple','rosybrown','royalblue','saddlebrown','salmon','sandybrown','seagreen','sienna','silver','skyblue','slateblue','springgreen','steelblue','tan','teal',
+  'thistle','tomato','turquoise','violet','yellowgreen'
 ];
 function parseStyleToFields(styleStr) {
   const s = styleStr.toLowerCase();
