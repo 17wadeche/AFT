@@ -194,6 +194,9 @@ function persistCustomRules() {
 function rebuildRuleStyles() {
   customRules.forEach(r => { r.style = buildStyleFromFields(r.prop, r.color); });
 }
+const __dbg = (...a) => {
+  try { if ((globalThis.DEBUG ?? false) === true) console.debug(...a); } catch {}
+};
 customRules = customRules
   .map(normalizeRuleFromStorage)
   .filter(Boolean);
@@ -1643,9 +1646,7 @@ async function main(host = {}, fetchUrlOverride) {
     console.log('[AFT] fetched PDF bytes:', data.byteLength, 'from', fetchUrl);
   } 
   catch (err) {
-    if (typeof DEBUG !== 'undefined' && DEBUG) {
-      console.debug('[AFT] PDF fetch failed:', err);
-    }
+    __dbg('[AFT] PDF fetch failed:', err);
     return;
   }
   function parseFilenameFromCD(v) {
@@ -1692,9 +1693,9 @@ async function main(host = {}, fetchUrlOverride) {
   eventBus.on('pagesloaded',        () => loader.remove());
   eventBus.on('pagesinit',          () => loader.remove());
   eventBus.on('documentloadfailed', () => loader.remove());
-  eventBus.on('pagesinit',          () => { checkWordsDetectable(); });
-  eventBus.on('textlayerrendered',  () => { checkWordsDetectable(); });
-  eventBus.on('pagesloaded',        () => { checkWordsDetectable(); });
+  eventBus.on('pagesinit',         () => { checkWordsDetectable().catch(()=>{}); });
+eventBus.on('textlayerrendered', () => { checkWordsDetectable().catch(()=>{}); });
+eventBus.on('pagesloaded',       () => { checkWordsDetectable().catch(()=>{}); });
   const fix = document.createElement('style');
   fix.textContent = `
     .textLayer span {
