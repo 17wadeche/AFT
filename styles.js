@@ -1,14 +1,4 @@
 export const defaultQuickLinks = [
-  'Device Summary',
-  'Reason for Transmission',
-  'Alert and Event Summary',
-  'Observations',
-  'Notable Data Section',
-  'Notes',
-  'Device Status',
-  'Episodes List',
-  'Other Hardware Notes',
-  'CareAlert Event List'
 ];
 const defaultStyleWords = [
   {
