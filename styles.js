@@ -434,6 +434,10 @@ const config = {
         {
           style: 'color:red',      
           words: ['explant']
+        },
+        {
+          style: 'underline:red',
+          words: ['Hospitalization']
         }
       ]
     },
