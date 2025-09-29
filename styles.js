@@ -437,7 +437,8 @@ const config = {
         },
         {
           style: 'underline:red',
-          words: ['Hospitalization']
+          words: ['Hospitalization','Hospital']
+
         }
       ]
     },
