@@ -139,10 +139,7 @@ const CSS_COLOR_KEYWORDS = [
   'thistle','tomato','turquoise','violet','yellowgreen'
 ];
 function parseStyleToFields(styleStr) {
-  const s = (styleStr || '').toLowerCase().trim();
-  const mUl = /^(?:underline|ul)\s*:\s*([^;]+)$/.exec(s);
-  if (mUl) return { prop: 'underline', color: mUl[1].trim() };
-  if (/^(?:underline|ul)$/.test(s)) return { prop: 'underline', color: 'red' };
+  const s = styleStr.toLowerCase();
   if (/\btext-decoration-line\s*:\s*underline\b/.test(s) || /\btext-decoration\b[^;]*underline/.test(s)) {
     const m = /text-decoration-color\s*:\s*([^;]+)/i.exec(styleStr) ||
               /text-decoration\s*:[^;]*\b([^;\s]+)\s*$/i.exec(styleStr);

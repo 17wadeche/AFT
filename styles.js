@@ -436,9 +436,8 @@ const config = {
           words: ['explant']
         },
         {
-          style: 'underline:red',
-          words: ['Hospitalization','Hospital']
-
+          style: 'text-decoration-line: underline; text-decoration-color: red;',
+          words: ['Hospitalization', 'Hospital']
         }
       ]
     },
