@@ -24,7 +24,9 @@ const ALLOWED_PREFIXES = [
       const pdfUrl = location.href.replace(/#noaft$/, '');
       location.href = extViewerBase + '?src=' + encodeURIComponent(pdfUrl);
     };
-    document.body.appendChild(btn);
+    mountAtTop(btn);
+    forceTopButtonStyles(btn);
+    requestAnimationFrame(ensureButtonVisible);
   }
   if (document.readyState === 'loading') {
     window.addEventListener('DOMContentLoaded', injectButton, { once: true });
@@ -51,6 +53,39 @@ const ALLOWED_PREFIXES = [
 function urlIsAllowed(href = location.href) {
   return ALLOWED_PREFIXES.some(p => href.startsWith(p));
 }
+function mountAtTop(el) {
+  (document.documentElement || document.body).appendChild(el);
+}
+function forceTopButtonStyles(b) {
+  if (!b) return;
+  Object.assign(b.style, {
+    position: 'fixed',
+    top: '12px',
+    right: '12px',
+    bottom: 'auto',
+    left: 'auto',
+    transform: 'none',
+    clipPath: 'none',
+    zIndex: String(2147483647 + 1000),
+    pointerEvents: 'auto',
+    visibility: 'visible',
+    display: 'block'
+  });
+  try {
+    (document.documentElement || {}).style.overflow = 'visible';
+    if (document.body) document.body.style.overflow = 'visible';
+  } catch {}
+}
+function ensureButtonVisible() {
+  const b = document.getElementById('__aft_open_styled');
+  if (!b) return;
+  const r = b.getBoundingClientRect();
+  const hidden =
+    r.width === 0 || r.height === 0 ||
+    r.bottom <= 0 || r.right <= 0 ||
+    r.top >= innerHeight || r.left >= innerWidth;
+  if (hidden) forceTopButtonStyles(b);
+}
 function ensureOpenStyledButton() {
   if (document.getElementById('__aft_open_styled')) return;
   if (!urlIsAllowed(location.href.replace(/#noaft$/, ''))) return;
@@ -66,7 +101,9 @@ function ensureOpenStyledButton() {
     const pdfUrl = location.href.replace(/#noaft$/, '');
     location.href = extViewerBase + '?src=' + encodeURIComponent(pdfUrl);
   };
-  document.body.appendChild(btn);
+  mountAtTop(btn);
+  forceTopButtonStyles(btn);
+  requestAnimationFrame(ensureButtonVisible);
 }
 let initialized = false;
 let prevActiveWordsSet = new Set();
@@ -1930,7 +1967,6 @@ async function main(host = {}, fetchUrlOverride) {
   if (!hasEmbedForToggle) {
     toggle.textContent = 'Open Original';
   }
-
   toggle.onclick = () => {
     if (wrapper && embed) {
       wrapper.replaceWith(embed);
