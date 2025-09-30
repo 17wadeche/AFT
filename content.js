@@ -6,8 +6,8 @@ const ALLOWED_PREFIXES = [
   'https://crm.medtronic.com/sap/bc/contentserver/'
 ];
 (function offerOpenStyledButton() {
-  if (location.hash !== '#noaft') return;
-  if (!urlIsAllowed(location.href.replace(/#noaft$/, ''))) return;
+  if (!isNoAft()) return;
+  if (!urlIsAllowed(location.href.replace(/#.*/, ''))) return;
   function injectButton() {
     if (document.getElementById('__aft_open_styled')) return;
     const btn = document.createElement('button');
@@ -21,7 +21,7 @@ const ALLOWED_PREFIXES = [
     `;
     btn.onclick = () => {
       const extViewerBase = chrome.runtime.getURL('viewer.html');
-      const pdfUrl = location.href.replace(/#noaft$/, '');
+      const pdfUrl = location.href.replace(/#.*/, '');
       location.href = extViewerBase + '?src=' + encodeURIComponent(pdfUrl);
     };
     mountAtTop(btn);
@@ -35,6 +35,13 @@ const ALLOWED_PREFIXES = [
   }
   return;
 })();
+function isNoAft() { return /^#noaft(?:$|[&/?=])/i.test(location.hash); }
+window.addEventListener('hashchange', () => {
+  if (isNoAft() && urlIsAllowed(location.href.replace(/#.*$/, ''))) {
+    ensureOpenStyledButton();
+    requestAnimationFrame(ensureButtonVisible);
+  }
+}, { passive: true });
 (function redirectIfPluginPdf() {
   try {
     const extViewerBase = chrome.runtime.getURL('viewer.html');
@@ -76,6 +83,36 @@ function forceTopButtonStyles(b) {
     if (document.body) document.body.style.overflow = 'visible';
   } catch {}
 }
+(function ensureButtonCSS() {
+  if (document.getElementById('__aft_btn_css')) return;
+  const st = document.createElement('style');
+  st.id = '__aft_btn_css';
+  st.textContent = `
+    #__aft_open_styled {
+      all: initial !important;
+      position: fixed !important;
+      top: 12px !important;
+      right: 12px !important;
+      z-index: 2147483647 !important;
+      padding: 6px 12px !important;
+      background: #ff0 !important;
+      color: #000 !important;
+      font-weight: 700 !important;
+      border: 1px solid #888 !important;
+      border-radius: 4px !important;
+      cursor: pointer !important;
+      display: inline-block !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+      transform: none !important;
+      clip-path: none !important;
+      filter: none !important;
+      opacity: 1 !important;
+    }
+    html, body { overflow: visible !important; }
+  `;
+  document.documentElement.appendChild(st);
+})();
 function ensureButtonVisible() {
   const b = document.getElementById('__aft_open_styled');
   if (!b) return;
@@ -86,9 +123,20 @@ function ensureButtonVisible() {
     r.top >= innerHeight || r.left >= innerWidth;
   if (hidden) forceTopButtonStyles(b);
 }
+(function wireEnsureButtonVisibleOnce() {
+  if (window.__aftWireBtnVis) return;
+  window.__aftWireBtnVis = true;
+  window.addEventListener('resize', ensureButtonVisible, { passive: true });
+  document.addEventListener('visibilitychange', ensureButtonVisible);
+  const __aftWatchdog = setInterval(ensureButtonVisible, 500);
+  setTimeout(() => clearInterval(__aftWatchdog), 8000);
+  new MutationObserver(() => ensureButtonVisible()).observe(document.documentElement, {
+    attributes: true, subtree: true, childList: true
+  });
+})();
 function ensureOpenStyledButton() {
   if (document.getElementById('__aft_open_styled')) return;
-  if (!urlIsAllowed(location.href.replace(/#noaft$/, ''))) return;
+  if (!urlIsAllowed(location.href.replace(/#.*/, ''))) return;
   const btn = document.createElement('button');
   btn.id = '__aft_open_styled';
   btn.textContent = 'Open Styled';
@@ -98,7 +146,7 @@ function ensureOpenStyledButton() {
   `;
   btn.onclick = () => {
     const extViewerBase = chrome.runtime.getURL('viewer.html');
-    const pdfUrl = location.href.replace(/#noaft$/, '');
+    const pdfUrl = location.href.replace(/#.*/, '');
     location.href = extViewerBase + '?src=' + encodeURIComponent(pdfUrl);
   };
   mountAtTop(btn);
