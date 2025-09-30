@@ -1937,6 +1937,7 @@ async function main(host = {}, fetchUrlOverride) {
       embed.style.display = '';
       history.replaceState(null, '', location.href.replace(/(#.*)?$/, '#noaft'));
       ensureOpenStyledButton();
+      return;
     } else if (window.__AFT_FETCH_URL) {
       location.href = window.__AFT_FETCH_URL + (window.__AFT_FETCH_URL.includes('#') ? '' : '#noaft');
       return;
