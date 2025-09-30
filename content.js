@@ -51,6 +51,23 @@ const ALLOWED_PREFIXES = [
 function urlIsAllowed(href = location.href) {
   return ALLOWED_PREFIXES.some(p => href.startsWith(p));
 }
+function ensureOpenStyledButton() {
+  if (document.getElementById('__aft_open_styled')) return;
+  if (!urlIsAllowed(location.href.replace(/#noaft$/, ''))) return;
+  const btn = document.createElement('button');
+  btn.id = '__aft_open_styled';
+  btn.textContent = 'Open Styled';
+  btn.style.cssText = `
+    position:fixed; top:37px; right:16px; z-index:2147483647; padding:6px 12px;
+    background:#ff0; color:#000; font-weight:bold; cursor:pointer; border:1px solid #888; border-radius:4px;
+  `;
+  btn.onclick = () => {
+    const extViewerBase = chrome.runtime.getURL('viewer.html');
+    const pdfUrl = location.href.replace(/#noaft$/, '');
+    location.href = extViewerBase + '?src=' + encodeURIComponent(pdfUrl);
+  };
+  document.body.appendChild(btn);
+}
 let initialized = false;
 let prevActiveWordsSet = new Set();
 let activeWordsSet     = new Set();
@@ -1918,6 +1935,8 @@ async function main(host = {}, fetchUrlOverride) {
     if (wrapper && embed) {
       wrapper.replaceWith(embed);
       embed.style.display = '';
+      history.replaceState(null, '', location.href.replace(/(#.*)?$/, '#noaft'));
+      ensureOpenStyledButton();
     } else if (window.__AFT_FETCH_URL) {
       location.href = window.__AFT_FETCH_URL + (window.__AFT_FETCH_URL.includes('#') ? '' : '#noaft');
       return;
