@@ -207,14 +207,14 @@ const defaultStyleWords = [
 
 const config = {
     "Interventional Vascular": { styleWords: defaultStyleWords,
-        'CAS': {},
-        'CS': {},
-        'CRDN': {},
-        'PVH': {},
-        'SHA': {}
+        'Cardiac Ablation Solutions': {},
+        'Cardiac Surgery': {},
+        'Coronary and Renal Denervation': {},
+        'Peripheral Vascular Health': {},
+        'Structural Heart & Aortic': {}
     },
     "CRM/MCS" : {
-        'CRM': {
+        'Cardiac Rhythm Management': {
             styleWords: [
                 {
                     style: 'color:blue',
@@ -298,18 +298,18 @@ const config = {
                 'CareAlert Event List'
             ],
         },
-        'MCS': { styleWords: defaultStyleWords },
+        'Mechanical Circulatory Support': { styleWords: defaultStyleWords },
     },
     "Medical Surgical": { styleWords: defaultStyleWords,
-        'ACM': {},
-        'Endo': {},
+        'Acute Care & Monitoring': {},
+        'Endoscopy': {},
         'RCS': {},
         'Surgical': {},
-        'VSS': {}
+        'Ventalation Service and Support': {}
     },
     "Neuroscience" : {
-        'CST': {styleWords: defaultStyleWords},
-        'ENT': {
+        'Cranial and Spinal Technologies': {styleWords: defaultStyleWords},
+        'Ears Nose & Throat': {
             styleWords: [
                 {
                     style: 'color:green',
@@ -388,8 +388,8 @@ const config = {
             ],
         },
         'Neuromodulation': {styleWords: defaultStyleWords},
-        'NV': {styleWords: defaultStyleWords},
-        'PH': {styleWords: defaultStyleWords}
+        'Neurovascular': {styleWords: defaultStyleWords},
+        'Pelvic Health': {styleWords: defaultStyleWords}
     },
 };
 
