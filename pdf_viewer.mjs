@@ -138,7 +138,6 @@ const AutoPrintRegExp = /\bprint\s*\(/;
 function scrollIntoView(element, spot, scrollMatches = false) {
   let parent = element.offsetParent;
   if (!parent) {
-    console.error("offsetParent is not set -- cannot scroll");
     return;
   }
   let offsetY = element.offsetTop + element.clientTop;

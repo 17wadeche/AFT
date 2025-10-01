@@ -211,16 +211,13 @@ const config = {
   MNAV: { //BU
     styleWords: defaultStyleWords,
     'Cranial and Spinal Technologies': { // OU 
-      styleWords: defaultStyleWords,
     },
     'Ear / Nose / Throat': { // OU 
-      styleWords: defaultStyleWords,
     }
   },
   MAE: { // BU
     styleWords: defaultStyleWords,
     'Cranial and Spinal Technologies': { //OU
-      styleWords: defaultStyleWords,
     }
   },
   PSS: { // BU
@@ -231,7 +228,6 @@ const config = {
       }
     ],
     'Cranial and Spinal Technologies': { //OU
-      styleWords: defaultStyleWords,
     }
   },
   Xomed: { // BU
@@ -249,8 +245,6 @@ const config = {
           'Date of Pick Up',
           'Email',
           'E-mail',
-          'email',
-          'e-mail',
           'To the following address',
           'Complaint Source',
           'What symptoms were observed / why is service being requested?'
@@ -270,8 +264,6 @@ const config = {
           'Date of Pick Up',
           'Email',
           'E-mail',
-          'email',
-          'e-mail',
           'To the following address',
           'Complaint Source',
           'What symptoms were observed / why is service being requested?',
@@ -283,17 +275,10 @@ const config = {
         style: 'color:purple',
         words: [
           'Contact',
-          'contact',
           'Facility ID',
-          'facility ID',
           'Account',
-          'account',
           'Surgeon',
-          'surgeon',
           'Initial Reporter',
-          'initial reporter',
-          'Initial reporter',
-          'Physician',
           'physician'
         ]
       },
@@ -301,54 +286,33 @@ const config = {
         style: 'background:yellow',
         words: [
           'Heat',
-          'heat',
           'Hot',
-          'hot',
           'heating',
-          'Heating',
           'Heated',
-          'heated',
           'Broke',
-          'broke',
           'Broken',
-          'broken',
           'Break',
-          'break',
           'Fragments',
-          'fragments',
           'Methodology',
           'Death',
-          'death',
           'Injury',
-          'injury',
           'HOT',
           'HEAT',
           'warm',
-          'WARM',
-          'Warm',
           'BROKE',
           'BREAK',
           'FRAGMENT',
           'DEATH',
           'INJURY',
           'Notify',
-          'NOTIFY',
-          'notify',
           'Notified',
-          'NOTIFIED',
-          'notified',
           'Aware',
-          'AWARE',
-          'aware',
           'Correct',
-          'CORRECT',
-          'correct',
           'Deletion flag is set for the notification'
         ]
       }
     ],
     'Cranial and Spinal Technologies': { // OU
-      styleWords: defaultStyleWords,
     }
   },
   CRDM: {
@@ -442,32 +406,24 @@ const config = {
       ]
     },
     'Cardiovascular Diagnostics & Services': { // OU
-      styleWords: defaultStyleWords,
     },
     'Mechanical Circulatory Support': { // OU
-      styleWords: defaultStyleWords,
     }
   },
   Cryocath: { // BU
     'Cardiac Ablation Solutions': { // OU
-      styleWords: defaultStyleWords,
     }
   },
   'CV-GALWAY': { // BU
     'Coronary & Renal Denervation': { // OU
-      styleWords: defaultStyleWords,
     },
     'Peripheral Vascular Health': { // OU
-      styleWords: defaultStyleWords,
     }
   },
   'CV-SH': { // BU
     'Cardiac Surgery': { // OU
-      styleWords: defaultStyleWords,
-      quickLinks: ['Medtronic']
     },
     'Structural Heart and Aortic': { // OU
-      styleWords: defaultStyleWords,
       quickLinks: ['']
     }
   },
@@ -479,76 +435,44 @@ const config = {
   MITG: { // BU
     styleWords: defaultStyleWords,
     'Acute Care & Monitoring': { // OU
-      styleWords: defaultStyleWords,
     },
     Endoscopy: { // OU
-      styleWords: defaultStyleWords,
     },
     Gastrointestinal: { // OU
-      styleWords: defaultStyleWords,
     },
     'Patient Monitoring': { // OU
-      styleWords: defaultStyleWords,
     },
     'Pelvic Health': { // OU
-      styleWords: defaultStyleWords,
     },
     'Renal Care Solutions': { // OU
-      styleWords: defaultStyleWords,
     },
     'Respiratory Interventions': { // OU
-      styleWords: defaultStyleWords,
     },
     Surgical: { // OU
-      styleWords: defaultStyleWords,
     },
     'Surgical Innovations': { // OU
-      styleWords: defaultStyleWords,
     },
     'Surgical Robotics': { // OU
-      styleWords: defaultStyleWords,
     }
   },
   NEUROMOD: { // BU
-    styleWords: [
-      {
-        style: 'color:red',
-        words: [
-          'Text Color Outcome:'
-        ]
-      },
-      {
-        style: 'background:yellow',
-        words: [
-          'Highlighted Text Name:'
-        ]
-      }
-    ],
+    styleWords: defaultStyleWords,
     Neuromodulation: { // OU
-      styleWords: [
-        {
-          style: 'color:red',
-          words: ['OU test']
-        }
-      ]
     }
   },
   NeuroSurgery: { // BU
     styleWords: defaultStyleWords,
     'Cranial and Spinal Technologies': { // OU
-      styleWords: defaultStyleWords,
     }
   },
   NV: { // BU
     styleWords: defaultStyleWords,
     Neurovascular: { // OU
-      styleWords: defaultStyleWords,
     }
   },
   Spinal: { // BU
     styleWords: defaultStyleWords,
     'Cranial and Spinal Technologies': { // OU
-      styleWords: defaultStyleWords,
     }
   },
 };
