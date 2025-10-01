@@ -303,7 +303,6 @@ const config = {
     "Medical Surgical": { styleWords: defaultStyleWords,
         'Acute Care & Monitoring': {},
         'Endoscopy': {},
-        'RCS': {},
         'Surgical': {},
         'Ventilation Service and Support': {}
     },
