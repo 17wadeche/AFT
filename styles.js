@@ -305,7 +305,7 @@ const config = {
         'Endoscopy': {},
         'RCS': {},
         'Surgical': {},
-        'Ventalation Service and Support': {}
+        'Ventilation Service and Support': {}
     },
     "Neuroscience" : {
         'Cranial and Spinal Technologies': {styleWords: defaultStyleWords},
